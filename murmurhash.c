@@ -86,3 +86,12 @@ murmurhash (const char *key, uint32_t len, uint32_t seed) {
 
   return h;
 }
+
+char *murmurhash_str(const char *origin_str)
+{
+	uint32_t uuid = 0;
+	char uuid_str[32];
+	uuid = murmurhash(origin_str, (uint32_t )strlen(origin_str), 1024);
+	sprintf(uuid_str, "%ld", uuid);
+	return uuid_str;
+}

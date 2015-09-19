@@ -8,7 +8,8 @@ SOURCES += main.c \
     cJSON.c \
     c_str.c \
     murmurhash.c \
-    rehash_dict.c
+    rehash_dict.c \
+    solider.c \
 
 include(deployment.pri)
 qtcAddDeployment()
@@ -18,5 +19,7 @@ HEADERS += \
     cJSON.h \
     c_str.h \
     murmurhash.h \
-    rehash_dict.h
+    rehash_dict.h \
+    solider.h
 
+LIBS += -lpthread

@@ -920,7 +920,7 @@ bool single_rehash_dict(dict *d)
 	    return true;
         }
     }
-
+    d->hash_table[1].used = d->hash_table[0].used;
     free(d->hash_table[0].table);
     d->hash_table[0].table = NULL;
     d->hash_table[0].table = (dictEntry **)calloc(d->hash_table[1].size, sizeof(dictEntry*));
