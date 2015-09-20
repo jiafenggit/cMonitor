@@ -260,8 +260,8 @@ void activate_solider_merge(void)
 	//加入广播组
 	if (setsockopt(mul_socket,IPPROTO_IP,IP_ADD_MEMBERSHIP,&mrep, sizeof(mrep)) < 0)
 	{
-	perror("IP_ADD_MEMBERSHIP");
-	return 0;
+		perror("IP_ADD_MEMBERSHIP");
+		return 0;
 	}
 	solider_rt_dict = create_dic();
 	add_dict(solider_rt_dict, "merge size", INTTYPE, 1);
@@ -280,7 +280,7 @@ void activate_solider_merge(void)
 			close(mul_socket);
 			exit(0);
 		}
-		printf("msg from server: %s\n", buf);
+		printf("host msg: %s\n", buf);
 		if (parse_datagram(buf, dg_dict) == false)
 		{
 			printf("parse datagram error.\n");
@@ -289,17 +289,18 @@ void activate_solider_merge(void)
 			continue;
 		}
 		fetch_dict_value(dg_dict, "type", STRINGTYPE, type);
-		char datagram[MAX_BUF_SIZE];
-		fetch_dict_value(dg_dict, "datagram", STRINGTYPE, datagram);
-		char mmh[16];
-		fetch_dict_value(dg_dict, "mmh", STRINGTYPE, mmh);
-		if (strcmp(murmurhash_str(datagram), mmh) != 0)
-		{
-			printf("datagram loss.\n");
-			release_dict(dg_dict);
-			dg_dict = NULL;
-			continue;
-		}
+//		char datagram[MAX_BUF_SIZE];
+//		fetch_dict_value(dg_dict, "datagram", STRINGTYPE, datagram);
+//		char mmh[16];
+//		fetch_dict_value(dg_dict, "mmh", STRINGTYPE, mmh);
+//		if (strcmp(murmurhash_str(datagram), mmh) != 0)
+//		{
+//			printf("datagram loss.\n");
+//			printf("mmh")
+//			release_dict(dg_dict);
+//			dg_dict = NULL;
+//			continue;
+//		}
 		switch (atoi(type)) {
 		case RT_HOST:
 		{
@@ -315,7 +316,7 @@ void activate_solider_merge(void)
 			break;
 		}
 		release_dict(dg_dict);
-		sleep(fetch_key_key_value_int("collection", "sleep_time"));
+		//sleep(fetch_key_key_value_int("collection", "sleep_time"));
 	}
 }
 
@@ -555,12 +556,16 @@ bool merge_solider_rtdg(dict *solider_rt_dict, dict *dg_dict, char *buf)
 				cJSON *solider_rt_root;
 				char json_buf[MAX_BUF_SIZE];
 				split(json_buf, head->value.string_value, '|', 10);
+				printf("key:%s\n", head->key);
+				printf("value:%s\n", json_buf);
 				solider_rt_root = cJSON_Parse(json_buf);
 				time_t time_now;
 				time(&time_now);
 				char time_str[32];
 				sprintf(time_str, "%d", time_now);
+				printf("group_rt_root:%s\n", cJSON_Print(group_rt_root));
 				cJSON_AddItemToObject(group_rt_root, time_str, solider_rt_root);
+				printf("group_rt_root:%s\n", cJSON_Print(group_rt_root));
 				head = head->next;
 			}
 		}
@@ -589,6 +594,11 @@ bool merge_solider_rtdg(dict *solider_rt_dict, dict *dg_dict, char *buf)
 		cJSON_Delete(group_rt_root);
 		mulcast_solider_dg(sys_info_string);
 		free(sys_info_string);
+		release_dict(solider_rt_dict);
+		solider_rt_dict = NULL;
+		solider_rt_dict = create_dic();
+		add_dict(solider_rt_dict, "merge size", INTTYPE, 1);
+		add_dict(solider_rt_dict, uuid, STRINGTYPE, buf);
 		return true;
 	}
 
