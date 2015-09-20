@@ -591,7 +591,7 @@ bool merge_solider_rtdg(dict *solider_rt_dict, dict *dg_dict, char *buf)
 			}
 		}
 		sys_info_string = cJSON_Print(group_rt_root);
-		cJSON_Delete(group_rt_root);
+		save_rr_dg(group_rt_root);
 		mulcast_solider_dg(sys_info_string);
 		free(sys_info_string);
 		release_dict(solider_rt_dict);
@@ -601,9 +601,91 @@ bool merge_solider_rtdg(dict *solider_rt_dict, dict *dg_dict, char *buf)
 		add_dict(solider_rt_dict, uuid, STRINGTYPE, buf);
 		return true;
 	}
-
 }
 
+bool save_rr_dg(cJSON *rt_dg)
+{
+	char *rr_dg = NULL;
+	cJSON *rr_dg_root;
+	FILE *rr_fd = NULL;
+	char *file_name[16];
+	int file_size;
+	if (access("rr_datagram.json", F_OK) != -1)
+	{
+		if((rr_fd = fopen("rr_datagram.json", "r")) == NULL)
+		{
+			perror("open rr datagram file.");
+			fclose(rr_fd);
+			cJSON_Delete(rt_dg);
+			exit(0);
+		}
+		fseek(rr_fd, 0, SEEK_END);
+		file_size = ftell(rr_fd);
+		fseek(rr_fd, 0, SEEK_SET);
+		rr_dg = (char *)calloc(file_size + 1, sizeof(char));
+		if (rr_dg == NULL)
+		{
+			perror("calloc memory.");
+			fclose(rr_fd);
+			cJSON_Delete(rt_dg);
+			exit(0);
+		}
+		fread(rr_dg, sizeof(char), file_size, rr_fd);
+		fclose(rr_fd);
+
+		rr_dg_root = cJSON_Parse(rr_dg);
+		time_t time_now;
+		time(&time_now);
+		char time_str[32];
+		sprintf(time_str, "%d", time_now);
+		cJSON_AddItemToObject(rr_dg_root,time_str, rt_dg);
+		if ((rr_fd = fopen("rr_datagram.json", "w")) == NULL)
+		{
+			perror("open rr datagram file.");
+			fclose(rr_fd);
+			free(rr_dg);
+			cJSON_Delete(rt_dg);
+			rr_dg = NULL;
+			return false;
+		}
+		char *rt_dg_buf = cJSON_Print(rr_dg_root);
+		fputs(rt_dg_buf, rr_fd);
+		fclose(rr_fd);
+		free(rt_dg_buf);
+		free(rr_dg);
+		rr_dg = NULL;
+		cJSON_Delete(rr_dg_root);
+		rr_dg_root = NULL;
+		return true;
+	}
+	else
+	{
+		rr_dg_root = cJSON_CreateObject();
+		time_t time_now;
+		time(&time_now);
+		char time_str[32];
+		sprintf(time_str, "%d", time_now);
+		cJSON_AddItemToObject(rr_dg_root, time_str, rt_dg);
+		if ((rr_fd = fopen("rr_datagram.json", "a+")) == NULL)
+		{
+			perror("create rr datagram file.");
+			fclose(rr_fd);
+			free(rr_dg);
+			cJSON_Delete(rt_dg);
+			rr_dg = NULL;
+			return false;
+		}
+		char *rt_dg_buf = cJSON_Print(rr_dg_root);
+		fputs(rt_dg_buf, rr_fd);
+		fclose(rr_fd);
+		free(rt_dg_buf);
+		free(rr_dg);
+		rr_dg = NULL;
+		cJSON_Delete(rr_dg_root);
+		rr_dg_root = NULL;
+		return true;
+	}
+}
 
 
 int mul_test(void)

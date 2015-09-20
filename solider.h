@@ -24,7 +24,7 @@ void activate_solider_merge(void);
 char *encap_datagram(int dg_type, char *datagram);
 bool parse_datagram(char *datagram, dict *dg_dict);
 bool merge_solider_rtdg(dict *solider_rt_dict, dict *dg_dict, char *buf);
-
+bool save_rr_dg(cJSON *rt_dg);
 
 int mul_test(void);
 #endif // SOLIDER_H
