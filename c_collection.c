@@ -537,7 +537,7 @@ char* collect_machine_ip(void)
     }
     sin = (struct sockaddr_in *)&ifr_ip.ifr_addr;
     strcpy(ipaddr,inet_ntoa(sin->sin_addr));
-
+    close(sock_get_ip);
     return ipaddr;
 }
 
@@ -588,7 +588,7 @@ int collect_mac_addr(char * mac, int len_limit)
 	perror ("ioctl");
 	return -1;
     }
-
+    close(sock);
     return snprintf (mac, len_limit, "%X:%X:%X:%X:%X:%X", (unsigned char) ifreq.ifr_hwaddr.sa_data[0], (unsigned char) ifreq.ifr_hwaddr.sa_data[1], (unsigned char) ifreq.ifr_hwaddr.sa_data[2], (unsigned char) ifreq.ifr_hwaddr.sa_data[3], (unsigned char) ifreq.ifr_hwaddr.sa_data[4], (unsigned char) ifreq.ifr_hwaddr.sa_data[5]);
 }
 
