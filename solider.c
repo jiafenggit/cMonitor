@@ -11,7 +11,7 @@ void activate_solider_collect(void)
 	{
 		sys_info_json = collect_sys_info();
 		sys_info_dg = encap_datagram(RT_HOST, sys_info_json);
-		printf("sys info dg:%s\n", sys_info_dg);
+		//printf("sys info dg:%s\n", sys_info_dg);
 		mulcast_dg(sys_info_dg);
 		free(sys_info_json);
 		sys_info_json = NULL;
@@ -264,7 +264,6 @@ void activate_solider_merge(void)
 		return 0;
 	}
 	solider_rt_dict = create_dic();
-	add_dict(solider_rt_dict, "merge size", INTTYPE, 1);
 	while(true)
 	{
 		dg_dict = create_dic();
@@ -288,6 +287,7 @@ void activate_solider_merge(void)
 			dg_dict = NULL;
 			continue;
 		}
+
 		fetch_dict_value(dg_dict, "type", STRINGTYPE, type);
 //		char datagram[MAX_BUF_SIZE];
 //		fetch_dict_value(dg_dict, "datagram", STRINGTYPE, datagram);
@@ -524,16 +524,17 @@ bool parse_datagram(char *datagram, dict *dg_dict)
 		return false;
 	}
 	free(value);
+	return true;
 }
 
 bool merge_solider_rtdg(dict *solider_rt_dict, dict *dg_dict, char *buf)
 {
 	char uuid[16];
 	fetch_dict_value(dg_dict, "uuid", STRINGTYPE, uuid);
-	if (exist_key(solider_rt_dict, "flag") == false)
-	{
-		add_dict(solider_rt_dict, "flag", STRINGTYPE, uuid);
-	}
+//	if (exist_key(solider_rt_dict, "flag") == false)
+//	{
+//		add_dict(solider_rt_dict, "flag", STRINGTYPE, uuid);
+//	}
 	if (exist_key(solider_rt_dict, uuid) == false)
 	{
 		add_dict(solider_rt_dict, uuid, STRINGTYPE, buf);
@@ -551,21 +552,20 @@ bool merge_solider_rtdg(dict *solider_rt_dict, dict *dg_dict, char *buf)
 		for (key_index == 0; key_index < solider_rt_dict->hash_table[0].size; key_index++)
 		{
 			head = solider_rt_dict->hash_table[0].table[key_index];
-			while(head && strlen(head->key) != 0 && strcmp(head->key, "flag") != 0 && strcmp(head->key, "merge size") != 0)
+			while(head && strlen(head->key) != 0)
 			{
 				cJSON *solider_rt_root;
 				char json_buf[MAX_BUF_SIZE];
 				split(json_buf, head->value.string_value, '|', 10);
-				printf("key:%s\n", head->key);
-				printf("value:%s\n", json_buf);
+//				printf("times:%d\nkey:%s\n", key_index, head->key);
+//				printf("value:%s\n", json_buf);
 				solider_rt_root = cJSON_Parse(json_buf);
 				time_t time_now;
 				time(&time_now);
 				char time_str[32];
 				sprintf(time_str, "%d", time_now);
-				printf("group_rt_root:%s\n", cJSON_Print(group_rt_root));
 				cJSON_AddItemToObject(group_rt_root, time_str, solider_rt_root);
-				printf("group_rt_root:%s\n", cJSON_Print(group_rt_root));
+
 				head = head->next;
 			}
 		}
@@ -575,7 +575,7 @@ bool merge_solider_rtdg(dict *solider_rt_dict, dict *dg_dict, char *buf)
 			{
 			    head = NULL;
 			    head = solider_rt_dict->hash_table[1].table[key_index];
-			    while(head && strlen(head->key) != 0 && strcmp(head->key, "flag") != 0 && strcmp(head->key, "merge size") != 0)
+			    while(head && strlen(head->key) != 0 )
 			    {
 				    cJSON *solider_rt_root;
 				    char json_buf[MAX_BUF_SIZE];
@@ -590,6 +590,7 @@ bool merge_solider_rtdg(dict *solider_rt_dict, dict *dg_dict, char *buf)
 			    }
 			}
 		}
+		printf("group_rt_root:%s\n", cJSON_Print(group_rt_root));
 		sys_info_string = cJSON_Print(group_rt_root);
 		save_rr_dg(group_rt_root);
 		mulcast_solider_dg(sys_info_string);
@@ -597,7 +598,6 @@ bool merge_solider_rtdg(dict *solider_rt_dict, dict *dg_dict, char *buf)
 		release_dict(solider_rt_dict);
 		solider_rt_dict = NULL;
 		solider_rt_dict = create_dic();
-		add_dict(solider_rt_dict, "merge size", INTTYPE, 1);
 		add_dict(solider_rt_dict, uuid, STRINGTYPE, buf);
 		return true;
 	}

@@ -197,7 +197,7 @@ bool add_dict(dict *d, char *key, int type, ...)
 		case DECIMALTYPE:
 		{
 			de->value_type = DECIMALTYPE;
-			de->value.decimal_value = va_arg(value_ptr, long double);
+			de->value.decimal_value = va_arg(value_ptr, double);
 		}
 		    break;
 		case STRINGTYPE:
@@ -950,7 +950,44 @@ bool single_rehash_dict(dict *d)
 }
 
 
+dictEntry *fetch_dictEntry(dict *d, char *key)
+{
+	dictEntry *head = NULL;
+	uint32_t key_index = 0;
 
+	if (exist_key(d, key) == false)
+	{
+		printf("Key is not exist.\n");
+		return false;
+	}
+	key_index = murmurhash(key, (uint32_t)strlen(key), MMHASH_SEED);
+	key_index = key_index & d->hash_table[0].size_mask;
+	head = d->hash_table[0].table[key_index];
+	while(head)
+	{
+		if(strcmp(key, head->key) == 0)
+		{
+			return head;
+		}
+		head = head->next;
+	}
+	if(d->rehash_index != -1)
+	{
+		key_index = murmurhash(key, (uint32_t)strlen(key), MMHASH_SEED);
+		key_index = key_index & d->hash_table[1].size_mask;
+		head = d->hash_table[1].table[key_index];
+		while(head)
+		{
+			if(strcmp(key, head->key) == 0)
+			{
+				return head;
+			}
+			head = head->next;
+		}
+	}
+	return NULL;
+
+}
 
 
 
