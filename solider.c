@@ -289,18 +289,17 @@ void activate_solider_merge(void)
 		}
 
 		fetch_dict_value(dg_dict, "type", STRINGTYPE, type);
-//		char datagram[MAX_BUF_SIZE];
-//		fetch_dict_value(dg_dict, "datagram", STRINGTYPE, datagram);
-//		char mmh[16];
-//		fetch_dict_value(dg_dict, "mmh", STRINGTYPE, mmh);
-//		if (strcmp(murmurhash_str(datagram), mmh) != 0)
-//		{
-//			printf("datagram loss.\n");
-//			printf("mmh")
-//			release_dict(dg_dict);
-//			dg_dict = NULL;
-//			continue;
-//		}
+		char datagram[MAX_BUF_SIZE];
+		fetch_dict_value(dg_dict, "datagram", STRINGTYPE, datagram);
+		char mmh[16];
+		fetch_dict_value(dg_dict, "mmh", STRINGTYPE, mmh);
+		if (strcmp(murmurhash_str(datagram), mmh) != 0)
+		{
+			printf("datagram loss.\n");
+			release_dict(dg_dict);
+			dg_dict = NULL;
+			continue;
+		}
 		switch (atoi(type)) {
 		case RT_HOST:
 		{
@@ -338,7 +337,10 @@ char *encap_datagram(int dg_type, char *datagram)
 		strcat(dg_message, "|");
 		strcat(dg_message, "0");
 		strcat(dg_message, "|");
-		strcat(dg_message, murmurhash_str(datagram));
+		char *mmh = murmurhash_str(datagram);
+		strcat(dg_message, mmh);
+		free(mmh);
+		mmh = NULL;
 		strcat(dg_message, "|");
 		time(&time_now);
 		sprintf(time_str, "%d", time_now);
@@ -366,7 +368,10 @@ char *encap_datagram(int dg_type, char *datagram)
 		strcat(dg_message, "|");
 		strcat(dg_message, "1");
 		strcat(dg_message, "|");
-		strcat(dg_message, murmurhash_str(datagram));
+		char *mmh = murmurhash_str(datagram);
+		strcat(dg_message, mmh);
+		free(mmh);
+		mmh = NULL;
 		strcat(dg_message, "|");
 		time(&time_now);
 		sprintf(time_str, "%d", time_now);
@@ -394,7 +399,10 @@ char *encap_datagram(int dg_type, char *datagram)
 		strcat(dg_message, "|");
 		strcat(dg_message, "2");
 		strcat(dg_message, "|");
-		strcat(dg_message, murmurhash_str(datagram));
+		char *mmh = murmurhash_str(datagram);
+		strcat(dg_message, mmh);
+		free(mmh);
+		mmh = NULL;
 		strcat(dg_message, "|");
 		time(&time_now);
 		sprintf(time_str, "%d", time_now);
@@ -422,7 +430,10 @@ char *encap_datagram(int dg_type, char *datagram)
 		strcat(dg_message, "|");
 		strcat(dg_message, "3");
 		strcat(dg_message, "|");
-		strcat(dg_message, murmurhash_str(datagram));
+		char *mmh = murmurhash_str(datagram);
+		strcat(dg_message, mmh);
+		free(mmh);
+		mmh = NULL;
 		strcat(dg_message, "|");
 		time(&time_now);
 		sprintf(time_str, "%d", time_now);
@@ -450,7 +461,10 @@ char *encap_datagram(int dg_type, char *datagram)
 		strcat(dg_message, "|");
 		strcat(dg_message, "4");
 		strcat(dg_message, "|");
-		strcat(dg_message, murmurhash_str(datagram));
+		char *mmh = murmurhash_str(datagram);
+		strcat(dg_message, mmh);
+		free(mmh);
+		mmh = NULL;
 		strcat(dg_message, "|");
 		time(&time_now);
 		sprintf(time_str, "%d", time_now);
