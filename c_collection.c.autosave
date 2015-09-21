@@ -558,7 +558,6 @@ char* collect_machine_uuid(void)
 		return NULL;
 
 	}
-	fprintf(stderr, "MAC ADDR: %s\n", mac);
 	uuid_str = (char *)calloc(1024, sizeof(char));
 	value = (char *)calloc(1024, sizeof(char));
 	value_buf = (char *)calloc(1024, sizeof(char));
@@ -574,7 +573,6 @@ char* collect_machine_uuid(void)
 	value = NULL;
 	free(value_buf);
 	value_buf = NULL;
-	printf("uuid:%s\n", uuid_str);
 	return murmurhash_str(uuid_str);
 }
 

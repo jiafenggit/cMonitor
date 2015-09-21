@@ -10,7 +10,8 @@ SOURCES += main.c \
     murmurhash.c \
     rehash_dict.c \
     solider.c \
-    heartbeat.c
+    heartbeat.c \
+    unix_sock.c
 
 include(deployment.pri)
 qtcAddDeployment()
@@ -22,6 +23,7 @@ HEADERS += \
     murmurhash.h \
     rehash_dict.h \
     solider.h \
-    heartbeat.h
+    heartbeat.h \
+    unix_sock.h
 
 LIBS += -lpthread

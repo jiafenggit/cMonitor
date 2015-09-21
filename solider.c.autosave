@@ -632,9 +632,9 @@ bool save_rr_dg(cJSON *rt_dg)
 	FILE *rr_fd = NULL;
 	char *file_name[16];
 	int file_size;
-	if (access("/tmp/rr_datagram.json", F_OK) != -1)
+	if (access("/tmp/hour_datagram.json", F_OK) != -1)
 	{
-		if((rr_fd = fopen("/tmp/rr_datagram.json", "r")) == NULL)
+		if((rr_fd = fopen("/tmp/hour_datagram.json", "r")) == NULL)
 		{
 			perror("open rr datagram file.");
 			fclose(rr_fd);
@@ -661,7 +661,7 @@ bool save_rr_dg(cJSON *rt_dg)
 		char time_str[32];
 		sprintf(time_str, "%d", time_now);
 		cJSON_AddItemToObject(rr_dg_root,time_str, rt_dg);
-		if ((rr_fd = fopen("/tmp/rr_datagram.json", "w")) == NULL)
+		if ((rr_fd = fopen("/tmp/hour_datagram.json", "w")) == NULL)
 		{
 			perror("open rr datagram file.");
 			fclose(rr_fd);
@@ -688,7 +688,7 @@ bool save_rr_dg(cJSON *rt_dg)
 		char time_str[32];
 		sprintf(time_str, "%d", time_now);
 		cJSON_AddItemToObject(rr_dg_root, time_str, rt_dg);
-		if ((rr_fd = fopen("/tmp/rr_datagram.json", "a+")) == NULL)
+		if ((rr_fd = fopen("/tmp/hour_datagram.json", "a+")) == NULL)
 		{
 			perror("create rr datagram file.");
 			fclose(rr_fd);
