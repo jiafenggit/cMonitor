@@ -13,6 +13,7 @@ void activate_solider_collect(void)
 		sys_info_dg = encap_datagram(RT_HOST, sys_info_json);
 		//printf("sys info dg:%s\n", sys_info_dg);
 		mulcast_dg(sys_info_dg);
+		free(sys_info_dg);
 		free(sys_info_json);
 		sys_info_json = NULL;
 		sleep(fetch_key_key_value_int("collection", "sleep_time"));
@@ -91,7 +92,11 @@ void mulcast_solider_dg(char *data)
 	memset(&mcast_addr, 0, sizeof(mcast_addr));
 	mcast_addr.sin_family = AF_INET;
 	char solider_mul_addr[20];
-	memcpy(solider_mul_addr, fetch_key_key_value_str("network", "officer_multicast_add"), 16);
+	char *fetch_value_buf = fetch_key_key_value_str("network", "officer_multicast_add");
+	memcpy(solider_mul_addr, fetch_value_buf, 16);
+	free(fetch_value_buf);
+	fetch_value_buf = NULL;
+
 	mcast_addr.sin_addr.s_addr = inet_addr(solider_mul_addr);
 	mcast_addr.sin_port = htons(MCAST_PORT + 12);
 	printf("#########solider mulcast datagram:%s\n", data);
@@ -109,10 +114,9 @@ char *fetch_key_key_value_str(char *first_key, char *second_key)
 	char *conf_json = NULL;
 	cJSON *conf_root = NULL;
 	cJSON *conf_node = NULL;
-	char value_buf[128];
+	char *value_buf;
 	FILE *conf_fd = NULL;
 	int conf_file_size = 0;
-
 
 	if((conf_fd = fopen("/home/cf/conf/cCollection.conf.json", "r")) == NULL)
 	{
@@ -137,6 +141,7 @@ char *fetch_key_key_value_str(char *first_key, char *second_key)
 	conf_node = cJSON_GetObjectItem(conf_root, first_key);
 	free(conf_json);
 	conf_json = NULL;
+	value_buf = (char *)calloc(128, sizeof(char));
 	memset(value_buf, '\0', 128);
 	memcpy(value_buf,cJSON_GetObjectItem(conf_node, second_key)->valuestring, strlen(cJSON_GetObjectItem(conf_node, second_key)->valuestring));
 	cJSON_Delete(conf_root);
@@ -253,7 +258,10 @@ void activate_solider_merge(void)
 		return 0;
 	}
 	char solider_mul_addr[20];
-	memcpy(solider_mul_addr, fetch_key_key_value_str("network", "solider_multicast_add"), 16);
+	char *fetch_value_buf = fetch_key_key_value_str("network", "solider_multicast_add");
+	memcpy(solider_mul_addr, fetch_value_buf, 16);
+	free(fetch_value_buf);
+	fetch_value_buf = NULL;
 	struct ip_mreq mrep;
 	mrep.imr_multiaddr.s_addr = inet_addr(solider_mul_addr);
 	mrep.imr_interface.s_addr = htonl(INADDR_ANY);
@@ -321,15 +329,15 @@ void activate_solider_merge(void)
 
 char *encap_datagram(int dg_type, char *datagram)
 {
-	char dg_message[MAX_BUF_SIZE];
+	char *dg_message;
 	char time_str[32];
 	time_t time_now;
-	memset(dg_message, 0,  MAX_BUF_SIZE);
 	if (strlen(datagram) >= MAX_BUF_SIZE- (32*10))
 	{
 		printf("datagram is too long.\n");
 		return NULL;
 	}
+	dg_message = (char *)calloc(MAX_BUF_SIZE, sizeof(char));
 	switch (dg_type) {
 	case RT_HOST:
 	{
@@ -487,6 +495,7 @@ char *encap_datagram(int dg_type, char *datagram)
 	}
 		break;
 	default:
+		free(dg_message);
 		break;
 	}
 

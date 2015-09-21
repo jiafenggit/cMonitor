@@ -435,7 +435,9 @@ bool collect_machine_info(cJSON *collection, dict *collection_dict){
 
 	value = (char *)calloc(1024, sizeof(char));
 	value_buf = (char *)calloc(1024, sizeof(char));
-	memcpy(value, collect_machine_ip(), 1024);
+	char *machine_ip = collect_machine_ip();
+	memcpy(value,  machine_ip, 1024);
+	machine_ip = NULL;
 	if(add_dict(collection_dict, "machine_ip", 2, value) == false)
 	{
 		printf("dict add error.\n");
@@ -516,11 +518,12 @@ bool collect_machine_info(cJSON *collection, dict *collection_dict){
 char* collect_machine_ip(void)
 {
     int sock_get_ip;
-    char ipaddr[50];
+    char *ipaddr;
 
     struct   sockaddr_in *sin;
     struct   ifreq ifr_ip;
 
+    ipaddr = (char *)calloc(32, sizeof(char));
     if ((sock_get_ip=socket(AF_INET, SOCK_STREAM, 0)) == -1)
     {
 	perror("socket:");
@@ -560,7 +563,10 @@ char* collect_machine_uuid(void)
 	value = (char *)calloc(1024, sizeof(char));
 	value_buf = (char *)calloc(1024, sizeof(char));
 	strcat(uuid_str, mac);
-	strcat(uuid_str, collect_machine_ip());
+	char *machine_ip =  collect_machine_ip();
+	strcat(uuid_str, machine_ip);
+	free(machine_ip);
+	machine_ip = NULL;
 	uuid = murmurhash(uuid_str, (uint32_t )strlen(uuid_str), MMHASH_SEED);
 	memset(uuid_str, 0, sizeof(uuid_str));
 	sprintf(uuid_str, "%ld", uuid);
