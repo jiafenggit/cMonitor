@@ -105,10 +105,10 @@ void respond_dg(char *data_gram)
 	switch (atoi(type)) {
 	case MERGE_HOUR_TO_DAY:
 	{
-		if (merge_hour_to_day() == false)
-		{
-			printf("merge hour to day error.\n");
-		}
+//		if (merge_hour_to_day() == false)
+//		{
+//			printf("merge hour to day error.\n");
+//		}
 	}
 		break;
 	default:
@@ -116,86 +116,84 @@ void respond_dg(char *data_gram)
 	}
 }
 
-bool merge_hour_to_day(void)
-{
-	char *day_dg = NULL;
-	cJSON *day_dg_root;
-	FILE *day_fd = NULL;
-	int file_size;
-	if (access("/tmp/day_datagram.json", F_OK) != -1)
-	{
-		if((day_fd = fopen("/tmp/day_datagram.json", "r")) == NULL)
-		{
-			perror("open day datagram file.");
-			cJSON_Delete(rt_dg);
-			exit(0);
-		}
-		fseek(day_fd, 0, SEEK_END);
-		file_size = ftell(day_fd);
-		fseek(day_fd, 0, SEEK_SET);
-		day_dg = (char *)calloc(file_size + 1, sizeof(char));
-		if (day_dg == NULL)
-		{
-			perror("calloc memory.");
-			cJSON_Delete(rt_dg);
-			exit(0);
-		}
-		fread(day_dg, sizeof(char), file_size, day_fd);
-		fclose(day_fd);
+//bool merge_hour_to_day(void)
+//{
+//	char *day_dg = NULL;
+//	cJSON *day_dg_root;
+//	FILE *day_fd = NULL;
+//	int file_size;
+//	if (access("/tmp/day_datagram.json", F_OK) != -1)
+//	{
+//		if((day_fd = fopen("/tmp/day_datagram.json", "r")) == NULL)
+//		{
+//			perror("open day datagram file.");
+//			exit(0);
+//		}
+//		fseek(day_fd, 0, SEEK_END);
+//		file_size = ftell(day_fd);
+//		fseek(day_fd, 0, SEEK_SET);
+//		day_dg = (char *)calloc(file_size + 1, sizeof(char));
+//		if (day_dg == NULL)
+//		{
+//			perror("calloc memory.");
+//			exit(0);
+//		}
+//		fread(day_dg, sizeof(char), file_size, day_fd);
+//		fclose(day_fd);
 
-		day_dg_root = cJSON_Parse(day_dg);
-		time_t time_now;
-		time(&time_now);
-		char time_str[32];
-		sprintf(time_str, "%d", time_now);
-		cJSON_AddItemToObject(day_dg_root,time_str, rt_dg);
-		if ((day_fd = fopen("/tmp/hour_datagram.json", "w")) == NULL)
-		{
-			perror("open day datagram file.");
-			fclose(day_fd);
-			free(day_dg);
-			cJSON_Delete(rt_dg);
-			day_dg = NULL;
-			return false;
-		}
-		char *rt_dg_buf = cJSON_Print(day_dg_root);
-		fputs(rt_dg_buf, day_fd);
-		fclose(day_fd);
-		free(rt_dg_buf);
-		free(day_dg);
-		day_dg = NULL;
-		cJSON_Delete(day_dg_root);
-		day_dg_root = NULL;
-		return true;
-	}
-	else
-	{
-		day_dg_root = cJSON_CreateObject();
-		time_t time_now;
-		time(&time_now);
-		char time_str[32];
-		sprintf(time_str, "%d", time_now);
-		cJSON_AddItemToObject(day_dg_root, time_str, rt_dg);
-		if ((day_fd = fopen("/tmp/hour_datagram.json", "a+")) == NULL)
-		{
-			perror("create day datagram file.");
-			fclose(day_fd);
-			free(day_dg);
-			cJSON_Delete(rt_dg);
-			day_dg = NULL;
-			return false;
-		}
-		char *rt_dg_buf = cJSON_Print(day_dg_root);
-		fputs(rt_dg_buf, day_fd);
-		fclose(day_fd);
-		free(rt_dg_buf);
-		free(day_dg);
-		day_dg = NULL;
-		cJSON_Delete(day_dg_root);
-		day_dg_root = NULL;
-		return true;
-	}
-}
+//		day_dg_root = cJSON_Parse(day_dg);
+//		time_t time_now;
+//		time(&time_now);
+//		char time_str[32];
+//		sprintf(time_str, "%d", time_now);
+//		cJSON_AddItemToObject(day_dg_root, time_str, rt_dg);
+//		if ((day_fd = fopen("/tmp/hour_datagram.json", "w")) == NULL)
+//		{
+//			perror("open day datagram file.");
+//			fclose(day_fd);
+//			free(day_dg);
+//			cJSON_Delete(rt_dg);
+//			day_dg = NULL;
+//			return false;
+//		}
+//		char *rt_dg_buf = cJSON_Print(day_dg_root);
+//		fputs(rt_dg_buf, day_fd);
+//		fclose(day_fd);
+//		free(rt_dg_buf);
+//		free(day_dg);
+//		day_dg = NULL;
+//		cJSON_Delete(day_dg_root);
+//		day_dg_root = NULL;
+//		return true;
+//	}
+//	else
+//	{
+//		day_dg_root = cJSON_CreateObject();
+//		time_t time_now;
+//		time(&time_now);
+//		char time_str[32];
+//		sprintf(time_str, "%d", time_now);
+//		cJSON_AddItemToObject(day_dg_root, time_str, rt_dg);
+//		if ((day_fd = fopen("/tmp/hour_datagram.json", "a+")) == NULL)
+//		{
+//			perror("create day datagram file.");
+//			fclose(day_fd);
+//			free(day_dg);
+//			cJSON_Delete(rt_dg);
+//			day_dg = NULL;
+//			return false;
+//		}
+//		char *rt_dg_buf = cJSON_Print(day_dg_root);
+//		fputs(rt_dg_buf, day_fd);
+//		fclose(day_fd);
+//		free(rt_dg_buf);
+//		free(day_dg);
+//		day_dg = NULL;
+//		cJSON_Delete(day_dg_root);
+//		day_dg_root = NULL;
+//		return true;
+//	}
+//}
 
 void unix_sock_test(void)
 {
@@ -230,4 +228,32 @@ void unix_sock_test(void)
 		sleep(10);
 //		close(sock);
 	}
+}
+
+
+char *send_and_recv_to_us(char *request_dg)
+{
+	int us_sock;
+	if ((us_sock = socket(PF_UNIX, SOCK_STREAM, 0)) < 0)
+	{
+		perror("socket");
+		exit(0);
+	}
+	struct sockaddr_un serveraddr;
+	memset(&serveraddr, 0, sizeof(serveraddr));
+	serveraddr.sun_family = AF_UNIX;
+	strcpy(serveraddr.sun_path, "/tmp/monitor_solider.sock");
+
+	if (connect(us_sock, (struct sockaddr *)&serveraddr, sizeof(serveraddr)) < 0)
+	{
+		perror("socket");
+		exit(0);
+	}
+	char *recvbuf;
+	recvbuf = (char *)calloc(1024, sizeof(char));
+	write(us_sock, request_dg, strlen(send));
+	read(us_sock, recvbuf, sizeof(recvbuf));
+	printf("recv:%s\n", recvbuf);
+
+	return recvbuf;
 }

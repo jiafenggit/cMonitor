@@ -13,17 +13,18 @@ int main(void)
 	pthread_t solider_merge_thread;
 	init_conf();
 	printf("%s\n", collect_machine_uuid());
-	if ((solider_collect_thread_flag = pthread_create(&solider_collect_thread, NULL, activate_unix_sock_server, NULL)) != 0)
-	{
-		perror("create pthread.");
-		exit(0);
-	}
-	if ((solider_collect_thread_flag = pthread_create(&solider_merge_thread, NULL, unix_sock_test, NULL)) != 0)
-	{
-		perror("create pthread.");
-		exit(0);
-	}
-//
+
+//	if ((solider_collect_thread_flag = pthread_create(&solider_collect_thread, NULL, activate_unix_sock_server, NULL)) != 0)
+//	{
+//		perror("create pthread.");
+//		exit(0);
+//	}
+//	if ((solider_collect_thread_flag = pthread_create(&solider_merge_thread, NULL, unix_sock_test, NULL)) != 0)
+//	{
+//		perror("create pthread.");
+//		exit(0);
+//	}
+
 //	if (fetch_key_key_value_bool("network", "send") == true)
 //	{
 //		if ((solider_collect_thread_flag = pthread_create(&solider_collect_thread, NULL, activate_solider_collect, NULL)) != 0)
@@ -40,6 +41,12 @@ int main(void)
 //			exit(0);
 //		}
 //	}
+	if ((solider_collect_thread_flag = pthread_create(&solider_collect_thread, NULL, activate_solider_listen, NULL)) != 0)
+	{
+		perror("create pthread.");
+		exit(0);
+	}
+
 
 	if (solider_collect_thread_flag == 0)
 	{

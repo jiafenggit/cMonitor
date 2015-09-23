@@ -10,6 +10,7 @@
 bool strip(char *str);
 bool split_strip(char *str, char *split_chr);
 bool split(char *result_str, char * origin_str, char split_chr, int split_index);
+char *str_split(char * origin_str, char split_chr, int split_index);
 bool memncpy(char *result_str, char *origin_str, int start_index, int cpy_num);
 
 

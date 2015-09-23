@@ -13,6 +13,8 @@
 #include <net/if_arp.h>
 #include <arpa/inet.h>
 #include <errno.h>
+#include <fcntl.h>
+#include <sys/shm.h>
 #include "cJSON.h"
 #include "rehash_dict.h"
 

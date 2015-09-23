@@ -73,9 +73,10 @@ char *create_conf_json(void)
 	cJSON_AddTrueToObject(network, "send");
 	cJSON_AddTrueToObject(network, "recv");
 	cJSON_AddStringToObject(network, "solider_multicast_add", "224.0.0.19");
-	cJSON_AddStringToObject(network, "officer_multicast_add", "224.0.0.20");
-	cJSON_AddStringToObject(network, "rrd_multicast_add", "224.0.0.21");
-	cJSON_AddStringToObject(network, "scale_out_multicast_add", "224.0.0.22");
+//	cJSON_AddStringToObject(network, "officer_multicast_add", "224.0.0.20");
+//	cJSON_AddStringToObject(network, "rrd_multicast_add", "224.0.0.21");
+	cJSON_AddStringToObject(network, "scale_out_multicast_add", "224.0.0.20");
+	cJSON_AddNumberToObject(network, "listening port", 10241);
 
 	cJSON_AddItemToObject(root, "solider", solider = cJSON_CreateObject());
 	cJSON_AddNumberToObject(solider, "port", 10240);
@@ -86,6 +87,7 @@ char *create_conf_json(void)
 	cJSON_AddItemToObject(root, "cluster", cluster = cJSON_CreateObject());
 	cJSON_AddNumberToObject(cluster, "group_size", 100);
 	cJSON_AddNumberToObject(cluster, "backup_officer_size", 3);
+
 
 	cJSON_AddItemToObject(root, "heartbeat", heartbeat = cJSON_CreateObject());
 	cJSON_AddNumberToObject(heartbeat, "sleep_time", 5);
@@ -558,7 +560,6 @@ char* collect_machine_uuid(void)
 		return NULL;
 
 	}
-	fprintf(stderr, "MAC ADDR: %s\n", mac);
 	uuid_str = (char *)calloc(1024, sizeof(char));
 	value = (char *)calloc(1024, sizeof(char));
 	value_buf = (char *)calloc(1024, sizeof(char));
@@ -574,7 +575,6 @@ char* collect_machine_uuid(void)
 	value = NULL;
 	free(value_buf);
 	value_buf = NULL;
-	printf("uuid:%s\n", uuid_str);
 	return murmurhash_str(uuid_str);
 }
 

@@ -189,6 +189,20 @@ bool split(char *result_str, char * origin_str, char split_chr, int split_index)
     }
 }
 
+char *str_split(char * origin_str, char split_chr, int split_index)
+{
+	char *result_str = NULL;
+	result_str = (char *)calloc(4096, sizeof(char));
+	if (split(result_str, origin_str, split_chr, split_index) == false)
+	{
+		return NULL;
+	}
+	else
+	{
+		return result_str;
+	}
+}
+
 bool memncpy(char *result_str, char *origin_str, int start_index, int cpy_num)
 {
     int curent_cpy_num = 0;

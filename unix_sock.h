@@ -29,6 +29,9 @@
 
 void activate_unix_sock_server(void);
 char *us_encap_datagram(int dg_type, char *datagram);
+void respond_dg(char *data_gram);
+bool merge_hour_to_day(void);
+char *send_dg_to_us(char *request_dg);
 //bool parse_datagram(char *datagram, dict *dg_dict);
 
 
