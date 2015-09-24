@@ -78,7 +78,30 @@ void mulcast_dg(char *json_data)
 	cJSON_Delete(conf_root);
 }
 
-void mulcast_solider_dg(char *data)
+void machine_scale_out(void)
+{
+
+	sleep(1);
+	char *dg_message;
+	dg_message = (char *)calloc(1024, sizeof(char));
+	strcat(dg_message, "2051");
+	strcat(dg_message, "|");
+	char *uuid = collect_machine_uuid();
+	char *machine_ip = collect_machine_ip();
+	strcat(dg_message, uuid);
+	strcat(dg_message, "|");
+	strcat(dg_message, machine_ip);
+	mulcast_scaleout_dg(dg_message);
+	free(dg_message);
+	dg_message = NULL;
+	free(uuid);
+	uuid = NULL;
+	free(machine_ip);
+	machine_ip = NULL;
+
+}
+
+void mulcast_scaleout_dg(char *data)
 {
 	struct sockaddr_in mcast_addr;
 	int mcast_socket;
@@ -92,14 +115,14 @@ void mulcast_solider_dg(char *data)
 	memset(&mcast_addr, 0, sizeof(mcast_addr));
 	mcast_addr.sin_family = AF_INET;
 	char solider_mul_addr[20];
-	char *fetch_value_buf = fetch_key_key_value_str("network", "officer_multicast_add");
+	char *fetch_value_buf = fetch_key_key_value_str("network", "scale_out_multicast_add");
 	memcpy(solider_mul_addr, fetch_value_buf, 16);
 	free(fetch_value_buf);
 	fetch_value_buf = NULL;
 
 	mcast_addr.sin_addr.s_addr = inet_addr(solider_mul_addr);
-	mcast_addr.sin_port = htons(MCAST_PORT + 12);
-	printf("#########solider mulcast datagram:%s\n", data);
+	mcast_addr.sin_port = htons(SCALEOUT_MCAST_PORT);
+	printf("scale out mulcast datagram:%s\n", data);
 	int status = sendto(mcast_socket, data, strlen(data), 0, (struct sockaddr*)&mcast_addr, sizeof(mcast_addr));
 	if (status < 0)
 	{
@@ -786,42 +809,46 @@ void activate_solider_scaleout(void)
 	if((mul_socket = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
 	{
 		perror("socket");
-		return -1;
-		}
+		exit(0);
+	}
 	memset(&local_address, 0, sizeof(local_address));
 	local_address.sin_family = AF_INET;
 	local_address.sin_addr.s_addr = htonl(INADDR_ANY);
-	local_address.sin_port = htons(8192);
+	local_address.sin_port = htons(SCALEOUT_MCAST_PORT);
 
 	if(bind(mul_socket, (struct sockaddr *)&local_address, sizeof(local_address)) < 0)
 	{
 		perror("bind");
-		return -1;
+		exit(0);
 	}
 
 	int loop = 1;
 	if (setsockopt(mul_socket,IPPROTO_IP,IP_MULTICAST_LOOP,&loop, sizeof(loop)) < 0)
 	{
 		perror("IP_MULTICAST_LOOP");
-		return 0;
+		exit(0);
 	}
-
 	struct ip_mreq mrep;
-	mrep.imr_multiaddr.s_addr = inet_addr("224.0.0.19");
+	char solider_mul_addr[20];
+	char *fetch_value_buf = fetch_key_key_value_str("network", "scale_out_multicast_add");
+	memcpy(solider_mul_addr, fetch_value_buf, 16);
+	free(fetch_value_buf);
+	fetch_value_buf = NULL;
+	mrep.imr_multiaddr.s_addr = inet_addr(solider_mul_addr);
 	mrep.imr_interface.s_addr = htonl(INADDR_ANY);
 	//加入广播组
 	if (setsockopt(mul_socket,IPPROTO_IP,IP_ADD_MEMBERSHIP,&mrep, sizeof(mrep)) < 0)
 	{
 		perror("IP_ADD_MEMBERSHIP");
-		return 0;
+		exit(0);
 	}
 
 	while(1)
 	{
-		char buf[4096];
+		char buf[1024];
 		memset(buf, 0, sizeof(buf));
 		socklen_t address_len = sizeof(local_address);
-		if(recvfrom(mul_socket, buf, 4096, 0,(struct sockaddr *)&local_address, &address_len) < 0)
+		if(recvfrom(mul_socket, buf, 1024, 0,(struct sockaddr *)&local_address, &address_len) < 0)
 		{
 			perror("recvfrom");
 		}
@@ -831,8 +858,8 @@ void activate_solider_scaleout(void)
 		memset(uuid, 0, sizeof(uuid));
 		memset(machine_ip, 0, sizeof(machine_ip));
 		split(type, buf , '|', 0);
-		split(type, uuid , '|', 0);
-		split(machine_ip, buf , '|', 0);
+		split(uuid, buf , '|', 1);
+		split(machine_ip, buf , '|', 2);
 		if (atoi(type) == SCALEOUT_DG)
 		{
 			if (add_machine(uuid, machine_ip) == false)
@@ -860,7 +887,8 @@ bool add_machine(char *uuid, char *machine_ip)
 	strcat(dg_message, "|");
 	strcat(dg_message, machine_ip);
 	// unix sock send
-	char * recv = send_and_recv_to_us(dg_message);
+	char *recv = NULL;
+	recv = send_and_recv_to_us(dg_message);
 	if (atoi(recv) != SUCCESS)
 	{
 		printf("add machine to unix sock server failed.\n");

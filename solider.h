@@ -2,6 +2,7 @@
 #define SOLIDER_H
 
 #include "c_collection.h"
+#include "unix_sock.h"
 #include <arpa/inet.h>
 #include <netinet/in.h>
 
@@ -19,15 +20,18 @@
 #define SUCCESS 4096
 
 #define MCAST_PORT		8192
+#define SCALEOUT_MCAST_PORT		8193
 #define MAX_BUF_SIZE		32768
 #define DG_MAX_SIZE		 5120
 
 void activate_solider_collect(void);
 void activate_solider_listen(void);
 void activate_solider_heartbeat(void);
+void activate_solider_scaleout(void);
+void machine_scale_out(void);
 void respond_hb(int client_sock, char *buf);
 void mulcast_dg(char *json_data);
-void mulcast_solider_dg(char *data);
+void mulcast_scaleout_dg(char *data);
 char *fetch_key_key_value(char *first_key, char *second_key);
 char *fetch_key_key_value_str(char *first_key, char *second_key);
 bool fetch_key_key_value_bool(char *first_key, char *second_key);

@@ -33,12 +33,12 @@ void activate_unix_sock_server(void)
 			perror("client socket");
 			continue;
 		}
-		char recv_buf[DG_MAX_SIZE];
-		read(client_sock, recv_buf, sizeof(recv_buf));
+		char recv_buf[1024];
+		read(client_sock, recv_buf,1024);
 		printf("recv:%s\n", recv_buf);
 		respond_dg(recv_buf);
 
-		write(client_sock, "success", 7);
+		write(client_sock, "4096", 8);
 		close(client_sock);
 	}
 	close(listen_sock);
@@ -100,19 +100,104 @@ char *us_encap_datagram(int dg_type, char *datagram)
 
 void respond_dg(char *data_gram)
 {
-	char *type = str_split(data_gram, '|', 1);
+	char *type = str_split(data_gram, '|', 0);
 
 	switch (atoi(type)) {
-	case MERGE_HOUR_TO_DAY:
+	case ADD_MACHINE:
 	{
-//		if (merge_hour_to_day() == false)
-//		{
-//			printf("merge hour to day error.\n");
-//		}
+		char *uuid = str_split(data_gram, '|', 1);
+		char *machine_ip = str_split(data_gram, '|', 2);
+		if (add_machine_to_file(uuid, machine_ip) == false)
+		{
+			printf("add machine to cluster failed.\n");
+			free(type);
+			free(uuid);
+			free(machine_ip);
+			exit(0);
+		}
+		free(type);
+		free(uuid);
+		free(machine_ip);
 	}
 		break;
 	default:
 		break;
+	}
+}
+
+bool add_machine_to_file(char *uuid, char *machine_ip)
+{
+	char *alive_machine_json = NULL;
+	cJSON *root;
+	FILE *alive_machine_fd = NULL;
+	if (access("/home/cf/conf/alive_machine.json", F_OK) != -1)
+	{
+		if (access("/home/cf/conf/alive_machine.json", R_OK) != 0)
+		{
+			printf("No read permission.\n");
+			return false;
+		}
+		if ((alive_machine_fd = fopen("/home/cf/conf/alive_machine.json", "r")) == NULL)
+		{
+			perror("open alive machine file.");
+			return false;
+		}
+		fseek(alive_machine_fd, 0, SEEK_END);
+		int alive_machine_file_size = ftell(alive_machine_fd);
+		fseek(alive_machine_fd, 0, SEEK_SET);
+		alive_machine_json = (char *)calloc(alive_machine_file_size + 1, sizeof(char));
+		if (alive_machine_json == NULL)
+		{
+			perror("calloc memory.");
+			fclose(alive_machine_fd);
+			exit(0);
+		}
+		fread(alive_machine_json, sizeof(char), alive_machine_file_size, alive_machine_fd);
+		fclose(alive_machine_fd);
+
+
+		root = cJSON_Parse(alive_machine_json);
+		cJSON *child = root->child;
+		while(child)
+		{
+			if (strcmp(child->string, uuid) == 0)
+			{
+				return true;
+			}
+			child = child->next;
+		}
+		cJSON_AddStringToObject(root,  uuid, machine_ip);
+		memset(alive_machine_json, 0, alive_machine_file_size);
+		free(alive_machine_json);
+		alive_machine_json = NULL;
+		alive_machine_json = cJSON_Print(root);
+		if ((alive_machine_fd = fopen("/home/cf/conf/alive_machine.json", "w")) == NULL)
+		{
+			perror("open alive machine file.");
+			return false;
+		}
+		fwrite(alive_machine_json, sizeof(char), strlen(alive_machine_json), alive_machine_fd);
+		//fputs(alive_machine_json, alive_machine_fd);
+		fclose(alive_machine_fd);
+		free(alive_machine_json);
+		cJSON_Delete(root);
+		return true;
+	}
+	else
+	{
+		root = cJSON_CreateObject();
+		cJSON_AddStringToObject(root,  uuid, machine_ip);
+		if ((alive_machine_fd = fopen("/home/cf/conf/alive_machine.json", "a+")) == NULL)
+		{
+			perror("open alive machine file.");
+			return false;
+		}
+		alive_machine_json = cJSON_Print(root);
+		fputs(alive_machine_json, alive_machine_fd);
+		fclose(alive_machine_fd);
+		free(alive_machine_json);
+		cJSON_Delete(root);
+		return true;
 	}
 }
 
@@ -249,11 +334,11 @@ char *send_and_recv_to_us(char *request_dg)
 		perror("socket");
 		exit(0);
 	}
-	char *recvbuf;
+	char *recvbuf = NULL;
 	recvbuf = (char *)calloc(1024, sizeof(char));
-	write(us_sock, request_dg, strlen(send));
-	read(us_sock, recvbuf, sizeof(recvbuf));
-	printf("recv:%s\n", recvbuf);
+	write(us_sock, request_dg, strlen(request_dg));
+	read(us_sock, recvbuf, 1024);
+	printf("send and recv:%s\n", recvbuf);
 
 	return recvbuf;
 }
