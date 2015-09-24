@@ -16,6 +16,8 @@
 #define REQUEST_RT_DG	2050
 #define SCALEOUT_DG		2051
 #define ADD_MACHINE        2052
+#define DEL_MACHINE		2053
+#define FETCH_RT_DG		2054
 
 #define SUCCESS 4096
 
@@ -44,6 +46,7 @@ bool save_rr_dg(cJSON *rt_dg);
 char *listen_encap_datagram(int type, ...);
 char *fetch_alive_machines(void);
 bool add_machine(char *uuid, char *machine_ip);
+char *fetch_re_dg_from_file(void);
 int mul_test(void);
 #endif // SOLIDER_H
 

@@ -13,6 +13,8 @@ int main(void)
 	pthread_t activate_us_server_thread;
 	int solider_merge_thread_flag = -1;
 	pthread_t solider_merge_thread;
+	int solider_listening_thread_flag = -1;
+	pthread_t solider_listening_thread;
 	init_conf();
 	printf("%s\n", collect_machine_uuid());
 
@@ -27,28 +29,33 @@ int main(void)
 //		exit(0);
 //	}
 
-//	if (fetch_key_key_value_bool("network", "send") == true)
-//	{
-//		if ((solider_collect_thread_flag = pthread_create(&solider_collect_thread, NULL, activate_solider_collect, NULL)) != 0)
-//		{
-//			perror("create pthread.");
-//			exit(0);
-//		}
-//	}
-//	if (fetch_key_key_value_bool("network", "recv") == true)
-//	{
-//		if ((solider_merge_thread_flag = pthread_create(&solider_merge_thread, NULL, activate_solider_merge, NULL)) != 0)
-//		{
-//			perror("create pthread.");
-//			exit(0);
-//		}
-//	}
+	if (fetch_key_key_value_bool("network", "send") == true)
+	{
+		if ((solider_collect_thread_flag = pthread_create(&solider_collect_thread, NULL, activate_solider_collect, NULL)) != 0)
+		{
+			perror("create pthread.");
+			exit(0);
+		}
+	}
+	if (fetch_key_key_value_bool("network", "recv") == true)
+	{
+		if ((solider_merge_thread_flag = pthread_create(&solider_merge_thread, NULL, activate_solider_merge, NULL)) != 0)
+		{
+			perror("create pthread.");
+			exit(0);
+		}
+	}
 	if ((solider_collect_thread_flag = pthread_create(&solider_collect_thread, NULL, activate_solider_scaleout, NULL)) != 0)
 	{
 		perror("create pthread.");
 		exit(0);
 	}
 	if ((solider_merge_thread = pthread_create(&solider_collect_thread, NULL, machine_scale_out, NULL)) != 0)
+	{
+		perror("create pthread.");
+		exit(0);
+	}
+	if ((solider_listening_thread = pthread_create(&solider_listening_thread, NULL, activate_solider_listen, NULL)) != 0)
 	{
 		perror("create pthread.");
 		exit(0);
@@ -66,6 +73,10 @@ int main(void)
 	if (solider_merge_thread_flag == 0)
 	{
 		pthread_join(solider_merge_thread, NULL);
+	}
+	if (solider_listening_thread_flag == 0)
+	{
+		pthread_join(solider_listening_thread, NULL);
 	}
 
 

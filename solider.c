@@ -638,7 +638,6 @@ bool merge_solider_rtdg(dict *cluster_rt_dict, dict *rt_dg_dict, char *buf)
 			    }
 			}
 		}
-		printf("cluster_rt_root:%s\n", cJSON_Print(cluster_rt_root));
 		sys_info_string = cJSON_Print(cluster_rt_root);
 		save_rr_dg(cluster_rt_root);
 		//mulcast_solider_dg(sys_info_string);
@@ -658,6 +657,34 @@ bool save_rr_dg(cJSON *cluster_rt_root)
 	FILE *cluster_rr_fd = NULL;
 	char *file_name[16];
 	int file_size;
+	if (access("/tmp/rt_datagram.json", F_OK) != -1)
+	{
+		FILE *rt_dg_fd;
+		if ((rt_dg_fd = fopen("/tmp/rt_datagram.json", "w")) == NULL)
+		{
+			perror("open rt datagram file.");
+			cJSON_Delete(cluster_rt_root);
+			return false;
+		}
+		char *rt_dg_buf = cJSON_Print(cluster_rt_root);
+		fputs(rt_dg_buf, rt_dg_fd);
+		fclose(rt_dg_fd);
+		free(rt_dg_buf);
+	}
+	else
+	{
+		FILE *rt_dg_fd;
+		if ((rt_dg_fd = fopen("/tmp/rt_datagram.json", "a+")) == NULL)
+		{
+			perror("open rt datagram file.");
+			cJSON_Delete(cluster_rt_root);
+			return false;
+		}
+		char *rt_dg_buf = cJSON_Print(cluster_rt_root);
+		fputs(rt_dg_buf, rt_dg_fd);
+		fclose(rt_dg_fd);
+		free(rt_dg_buf);
+	}
 	if (access("/home/cf/conf/hour_datagram.json", F_OK) != -1)
 	{
 		if((cluster_rr_fd = fopen("/home/cf/conf/hour_datagram.json", "r")) == NULL)
@@ -947,12 +974,48 @@ void activate_solider_listen(void)
 		    respond_hb(client_sock, buf);
 	    }
 		    break;
+	    case FETCH_RT_DG:
+	    {
+		    char *response = fetch_re_dg_from_file();
+		    send(client_sock, response, strlen(response), 0);
+	    }
+		    break;
 	    default:
 		    break;
 	    }
 	    close(client_sock);
 	}
 	close(listen_sock);
+}
+
+char *fetch_re_dg_from_file(void)
+{
+	char *alive_machine_json = NULL;
+	FILE *alive_machine_fd = NULL;
+
+	if (access("/home/cf/conf/alive_machine.json", R_OK) != 0)
+	{
+		printf("No read permission.\n");
+		return false;
+	}
+	if ((alive_machine_fd = fopen("/home/cf/conf/alive_machine.json", "r")) == NULL)
+	{
+		perror("open alive machine file.");
+		return false;
+	}
+	fseek(alive_machine_fd, 0, SEEK_END);
+	int alive_machine_file_size = ftell(alive_machine_fd);
+	fseek(alive_machine_fd, 0, SEEK_SET);
+	alive_machine_json = (char *)calloc(alive_machine_file_size + 1, sizeof(char));
+	if (alive_machine_json == NULL)
+	{
+		perror("calloc memory.");
+		fclose(alive_machine_fd);
+		exit(0);
+	}
+	fread(alive_machine_json, sizeof(char), alive_machine_file_size, alive_machine_fd);
+	fclose(alive_machine_fd);
+	return alive_machine_json;
 }
 
 void activate_solider_heartbeat(void)
