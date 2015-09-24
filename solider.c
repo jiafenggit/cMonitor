@@ -325,14 +325,14 @@ void activate_solider_merge(void)
 		memset(mmh, 0, sizeof(mmh));
 		fetch_dict_value(dg_dict, "mmh", STRINGTYPE, mmh);
 		char *mmh_hash = murmurhash_str(datagram);
-		if (strcmp(mmh_hash, mmh) != 0)
-		{
+//		if (strcmp(mmh_hash, mmh) != 0)
+//		{
 
-			printf("datagram loss.\n");
-			release_dict(dg_dict);
-			dg_dict = NULL;
-			continue;
-		}
+//			printf("datagram loss.\n");
+//			release_dict(dg_dict);
+//			dg_dict = NULL;
+//			continue;
+//		}
 		switch (atoi(type)) {
 		case RT_HOST:
 		{
