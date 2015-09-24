@@ -11,7 +11,7 @@ void activate_solider_collect(void)
 	{
 		sys_info_json = collect_sys_info();
 		sys_info_dg = mul_encap_datagram(RT_HOST, sys_info_json);
-		printf("sys info dg:%s\n", sys_info_dg);
+		printf("current collect sys info:%s\n", sys_info_dg);
 		mulcast_dg(sys_info_dg);
 		free(sys_info_dg);
 		free(sys_info_json);
@@ -313,8 +313,6 @@ void activate_solider_merge(void)
 		if (mul_parse_datagram(buf, dg_dict) == false)
 		{
 			printf("parse datagram error.\n");
-			release_dict(dg_dict);
-			dg_dict = NULL;
 			continue;
 		}
 
@@ -348,7 +346,6 @@ void activate_solider_merge(void)
 			break;
 		}
 		release_dict(dg_dict);
-		release_dict(cluster_rt_dict);
 		//sleep(fetch_key_key_value_int("collection", "sleep_time"));
 	}
 }
