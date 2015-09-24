@@ -4,7 +4,6 @@
 #include "unix_sock.h"
 
 
-
 int main(void)
 {
 	int solider_collect_thread_flag = -1;
@@ -16,7 +15,6 @@ int main(void)
 	int solider_listening_thread_flag = -1;
 	pthread_t solider_listening_thread;
 	init_conf();
-	printf("%s\n", collect_machine_uuid());
 
 	if ((activate_us_server__flag = pthread_create(&activate_us_server_thread, NULL, activate_unix_sock_server, NULL)) != 0)
 	{
@@ -50,16 +48,17 @@ int main(void)
 		perror("create pthread.");
 		exit(0);
 	}
-	if ((solider_merge_thread = pthread_create(&solider_collect_thread, NULL, machine_scale_out, NULL)) != 0)
+	if ((solider_merge_thread_flag = pthread_create(&solider_collect_thread, NULL, machine_scale_out, NULL)) != 0)
 	{
 		perror("create pthread.");
 		exit(0);
 	}
-	if ((solider_listening_thread = pthread_create(&solider_listening_thread, NULL, activate_solider_listen, NULL)) != 0)
+	if ((solider_listening_thread_flag = pthread_create(&solider_listening_thread, NULL, activate_solider_listen, NULL)) != 0)
 	{
 		perror("create pthread.");
 		exit(0);
 	}
+
 
 
 	if (activate_us_server__flag == 0)

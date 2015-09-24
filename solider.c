@@ -11,7 +11,7 @@ void activate_solider_collect(void)
 	{
 		sys_info_json = collect_sys_info();
 		sys_info_dg = mul_encap_datagram(RT_HOST, sys_info_json);
-		//printf("sys info dg:%s\n", sys_info_dg);
+		printf("sys info dg:%s\n", sys_info_dg);
 		mulcast_dg(sys_info_dg);
 		free(sys_info_dg);
 		free(sys_info_json);
@@ -324,7 +324,7 @@ void activate_solider_merge(void)
 		char mmh[16];
 		memset(mmh, 0, sizeof(mmh));
 		fetch_dict_value(dg_dict, "mmh", STRINGTYPE, mmh);
-		char *mmh_hash = murmurhash_str(datagram);
+//		char *mmh_hash = murmurhash_str(datagram);
 //		if (strcmp(mmh_hash, mmh) != 0)
 //		{
 
@@ -348,6 +348,7 @@ void activate_solider_merge(void)
 			break;
 		}
 		release_dict(dg_dict);
+		release_dict(cluster_rt_dict);
 		//sleep(fetch_key_key_value_int("collection", "sleep_time"));
 	}
 }
@@ -366,7 +367,10 @@ char *mul_encap_datagram(int dg_type, char *datagram)
 	switch (dg_type) {
 	case RT_HOST:
 	{
-		strcat(dg_message, collect_machine_uuid());
+		char *uuid =  collect_machine_uuid();
+		strcat(dg_message,uuid);
+		free(uuid);
+		uuid = NULL;
 		strcat(dg_message, "|");
 		strcat(dg_message, "0");
 		strcat(dg_message, "|");
@@ -397,7 +401,10 @@ char *mul_encap_datagram(int dg_type, char *datagram)
 		break;
 	case RT_GROUP:
 	{
-		strcat(dg_message, collect_machine_uuid());
+		char *uuid =  collect_machine_uuid();
+		strcat(dg_message,uuid);
+		free(uuid);
+		uuid = NULL;
 		strcat(dg_message, "|");
 		strcat(dg_message, "1");
 		strcat(dg_message, "|");
@@ -428,7 +435,10 @@ char *mul_encap_datagram(int dg_type, char *datagram)
 		break;
 	case RT_CLUSTER:
 	{
-		strcat(dg_message, collect_machine_uuid());
+		char *uuid =  collect_machine_uuid();
+		strcat(dg_message,uuid);
+		free(uuid);
+		uuid = NULL;
 		strcat(dg_message, "|");
 		strcat(dg_message, "2");
 		strcat(dg_message, "|");
@@ -459,7 +469,10 @@ char *mul_encap_datagram(int dg_type, char *datagram)
 		break;
 	case RT_HEARTBEAT:
 	{
-		strcat(dg_message, collect_machine_uuid());
+		char *uuid =  collect_machine_uuid();
+		strcat(dg_message,uuid);
+		free(uuid);
+		uuid = NULL;
 		strcat(dg_message, "|");
 		strcat(dg_message, "3");
 		strcat(dg_message, "|");
@@ -490,7 +503,10 @@ char *mul_encap_datagram(int dg_type, char *datagram)
 		break;
 	case RT_OFFICER:
 	{
-		strcat(dg_message, collect_machine_uuid());
+		char *uuid =  collect_machine_uuid();
+		strcat(dg_message,uuid);
+		free(uuid);
+		uuid = NULL;
 		strcat(dg_message, "|");
 		strcat(dg_message, "4");
 		strcat(dg_message, "|");
@@ -919,8 +935,16 @@ bool add_machine(char *uuid, char *machine_ip)
 	if (atoi(recv) != SUCCESS)
 	{
 		printf("add machine to unix sock server failed.\n");
+		free(recv);
+		recv = NULL;
+		free(dg_message);
+		dg_message = NULL;
 		return false;
 	}
+	free(recv);
+	recv = NULL;
+	free(dg_message);
+	dg_message = NULL;
 	return true;
 }
 
@@ -976,7 +1000,7 @@ void activate_solider_listen(void)
 		    break;
 	    case FETCH_RT_DG:
 	    {
-		    char *response = fetch_re_dg_from_file();
+		    char *response = fetch_rt_dg_from_file();
 		    send(client_sock, response, strlen(response), 0);
 	    }
 		    break;
@@ -988,34 +1012,34 @@ void activate_solider_listen(void)
 	close(listen_sock);
 }
 
-char *fetch_re_dg_from_file(void)
+char *fetch_rt_dg_from_file(void)
 {
-	char *alive_machine_json = NULL;
-	FILE *alive_machine_fd = NULL;
+	char *rt_dg_json = NULL;
+	FILE *rt_dg_fd = NULL;
 
-	if (access("/home/cf/conf/alive_machine.json", R_OK) != 0)
+	if (access("/tmp/rt_datagram.json", R_OK) != 0)
 	{
 		printf("No read permission.\n");
 		return false;
 	}
-	if ((alive_machine_fd = fopen("/home/cf/conf/alive_machine.json", "r")) == NULL)
+	if ((rt_dg_fd = fopen("/tmp/rt_datagram.json", "r")) == NULL)
 	{
 		perror("open alive machine file.");
 		return false;
 	}
-	fseek(alive_machine_fd, 0, SEEK_END);
-	int alive_machine_file_size = ftell(alive_machine_fd);
-	fseek(alive_machine_fd, 0, SEEK_SET);
-	alive_machine_json = (char *)calloc(alive_machine_file_size + 1, sizeof(char));
-	if (alive_machine_json == NULL)
+	fseek(rt_dg_fd, 0, SEEK_END);
+	int alive_machine_file_size = ftell(rt_dg_fd);
+	fseek(rt_dg_fd, 0, SEEK_SET);
+	rt_dg_json = (char *)calloc(alive_machine_file_size + 1, sizeof(char));
+	if (rt_dg_json == NULL)
 	{
 		perror("calloc memory.");
-		fclose(alive_machine_fd);
+		fclose(rt_dg_fd);
 		exit(0);
 	}
-	fread(alive_machine_json, sizeof(char), alive_machine_file_size, alive_machine_fd);
-	fclose(alive_machine_fd);
-	return alive_machine_json;
+	fread(rt_dg_json, sizeof(char), alive_machine_file_size, rt_dg_fd);
+	fclose(rt_dg_fd);
+	return rt_dg_json;
 }
 
 void activate_solider_heartbeat(void)
@@ -1045,8 +1069,10 @@ char *listen_encap_datagram(int type, ...)
 	{
 		char *dg_message;
 		dg_message = (char *)calloc(16, sizeof(char));
-
-		strcat(dg_message, collect_machine_uuid());
+		char *uuid = collect_machine_uuid();
+		strcat(dg_message, uuid);
+		free(uuid);
+		uuid = NULL;
 		strcat(dg_message, "|");
 		strcat(dg_message, "2049");
 		return dg_message;

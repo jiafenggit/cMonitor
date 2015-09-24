@@ -162,6 +162,9 @@ bool add_machine_to_file(char *uuid, char *machine_ip)
 		{
 			if (strcmp(child->string, uuid) == 0)
 			{
+				free(alive_machine_json);
+				alive_machine_json = NULL;
+				cJSON_Delete(root);
 				return true;
 			}
 			child = child->next;
@@ -174,6 +177,9 @@ bool add_machine_to_file(char *uuid, char *machine_ip)
 		if ((alive_machine_fd = fopen("/home/cf/conf/alive_machine.json", "w")) == NULL)
 		{
 			perror("open alive machine file.");
+			free(alive_machine_json);
+			alive_machine_json = NULL;
+			cJSON_Delete(root);
 			return false;
 		}
 		fwrite(alive_machine_json, sizeof(char), strlen(alive_machine_json), alive_machine_fd);

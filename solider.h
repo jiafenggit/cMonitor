@@ -46,7 +46,7 @@ bool save_rr_dg(cJSON *rt_dg);
 char *listen_encap_datagram(int type, ...);
 char *fetch_alive_machines(void);
 bool add_machine(char *uuid, char *machine_ip);
-char *fetch_re_dg_from_file(void);
+char *fetch_rt_dg_from_file(void);
 int mul_test(void);
 #endif // SOLIDER_H
 

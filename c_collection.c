@@ -439,6 +439,7 @@ bool collect_machine_info(cJSON *collection, dict *collection_dict){
 	value_buf = (char *)calloc(1024, sizeof(char));
 	char *machine_ip = collect_machine_ip();
 	memcpy(value,  machine_ip, 1024);
+	free(machine_ip);
 	machine_ip = NULL;
 	if(add_dict(collection_dict, "machine_ip", 2, value) == false)
 	{
@@ -549,7 +550,7 @@ char* collect_machine_ip(void)
 char* collect_machine_uuid(void)
 {
 	uint32_t uuid = 0;
-	char *uuid_str = NULL;
+	char uuid_str[1024];
 	char *value_buf = NULL;
 	char *value = NULL;
 	char    mac[18];
@@ -560,7 +561,7 @@ char* collect_machine_uuid(void)
 		return NULL;
 
 	}
-	uuid_str = (char *)calloc(1024, sizeof(char));
+	memset(uuid_str, 0, sizeof(uuid));
 	value = (char *)calloc(1024, sizeof(char));
 	value_buf = (char *)calloc(1024, sizeof(char));
 	strcat(uuid_str, mac);
