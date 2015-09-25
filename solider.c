@@ -997,8 +997,33 @@ void activate_solider_listen(void)
 		    break;
 	    case FETCH_RT_DG:
 	    {
-		    char *response = fetch_rt_dg_from_file();
-		    send(client_sock, response, strlen(response), 0);
+		    char *rt_dg_json = NULL;
+		    FILE *rt_dg_fd = NULL;
+		    if (access("/tmp/rt_datagram.json", R_OK) != 0)
+		    {
+			    printf("No read permission.\n");
+			    return false;
+		    }
+		    if ((rt_dg_fd = fopen("/tmp/rt_datagram.json", "r")) == NULL)
+		    {
+			    perror("open alive machine file.");
+			    return false;
+		    }
+		    fseek(rt_dg_fd, 0, SEEK_SET);
+		    rt_dg_json = (char *)calloc(1024, sizeof(char));
+		    if (rt_dg_json == NULL)
+		    {
+			    perror("calloc memory.");
+			    fclose(rt_dg_fd);
+			    exit(0);
+		    }
+		    while(fread(rt_dg_json, sizeof(char), 1024, rt_dg_fd))
+		    {
+			    printf("send content:%s\n", rt_dg_json);
+			    send(client_sock, rt_dg_json, strlen(rt_dg_json), 0);
+			    memset(rt_dg_json, 0, 1024);
+		    }
+		    fclose(rt_dg_fd);
 	    }
 		    break;
 	    default:

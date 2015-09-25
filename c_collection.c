@@ -608,6 +608,7 @@ bool collect_memory_info(cJSON *collection, dict *collection_dict)
 	int count = 0;
 	int denominator = 0;
 	int numerator = 0;
+	int buffer_cache = 0;
 
 	value = (char *)calloc(1024, sizeof(char));
 	value_buf = (char *)calloc(1024, sizeof(char));
@@ -639,6 +640,7 @@ bool collect_memory_info(cJSON *collection, dict *collection_dict)
 	{
 		fetch_vaules_from_file(value_buf, "/proc/meminfo", 1, "Buffers");
 		split(value, value_buf, ':', 0);
+		buffer_cache += atoi(value);
 		if(add_dict(collection_dict, "mem_buffers", 2, value) == false)
 		{
 			printf("dict add error.\n");
@@ -651,6 +653,7 @@ bool collect_memory_info(cJSON *collection, dict *collection_dict)
 	{
 		fetch_vaules_from_file(value_buf, "/proc/meminfo", 1, "Cached");
 		split(value, value_buf, ':', 0);
+		buffer_cache += atoi(value);
 		if(add_dict(collection_dict, "mem_cached", 2, value) == false)
 		{
 			printf("dict add error.\n");
@@ -673,7 +676,7 @@ bool collect_memory_info(cJSON *collection, dict *collection_dict)
 		memcpy(value_buf, value, strlen(value) - 2);
 		numerator = atoi(value_buf);
 		memset(value, 0, strlen(value));
-		sprintf(value, "%f", (float)numerator / (float)denominator);
+		sprintf(value, "%f", 1.0 - ((float)numerator + buffer_cache )/ (float)denominator);
 		if(add_dict(collection_dict, "mem_utilization", 2, value) == false)
 		{
 			printf("dict add error.\n");
