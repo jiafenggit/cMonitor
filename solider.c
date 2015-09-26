@@ -725,8 +725,12 @@ bool save_rr_dg(cJSON *cluster_rt_root)
 		time_t time_now;
 		time(&time_now);
 		char time_str[32];
+		memset(time_str, 0, 32);
+		char head_time_str[32];
+		memset(head_time_str, 0, 32);
+		memcpy(head_time_str, cluster_rr_dg_root->child->string, strlen(cluster_rr_dg_root->child->string));
 		sprintf(time_str, "%d", time_now);
-		long head_time = atol(cluster_rr_dg_root->child->string);
+		long head_time = atol(head_time_str);
 		if (time_now - head_time >= 3600)
 		{
 			cJSON_DeleteItemFromObject(cluster_rr_dg_root, cluster_rr_dg_root->child->string);

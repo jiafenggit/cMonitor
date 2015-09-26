@@ -1,6 +1,7 @@
 #include "c_collection.h"
 
 
+
 bool init_conf(void)
 {
 	char *conf_json = NULL;
@@ -27,6 +28,44 @@ bool init_conf(void)
 		fclose(conf_fd);
 		free(conf_json);
 	}
+
+}
+
+bool init_old_cpu_info(void)
+{
+	char *value = NULL;
+	char *value_buf = NULL;
+	FILE *fd;
+
+	old_cpu_use = 0;
+	old_cpu_total = 0;
+	if ((fd = fopen("/proc/stat", "r")) == NULL)
+	{
+		perror("read /proc/stat.");
+		return false;
+	}
+	value = (char *)calloc(1024, sizeof(char));
+	value_buf = (char *)calloc(1024, sizeof(char));
+	fgets(value_buf, 1024, fd);
+	fclose(fd);
+	split(value, value_buf, ' ', 1);
+	old_cpu_use += atoi(value);
+	memset(value, 0, strlen(value));
+	split(value, value_buf, ' ', 2);
+	old_cpu_use += atoi(value);
+	memset(value, 0, strlen(value));
+	split(value, value_buf, ' ', 3);
+	old_cpu_use += atoi(value);
+	memset(value, 0, strlen(value));
+	split(value, value_buf, ' ', 4);
+	old_cpu_total = atoi(value) + old_cpu_use;
+
+	free(value);
+	value = NULL;
+	free(value_buf);
+	value_buf = NULL;
+	sleep(1);
+	return true;
 }
 
 char *create_conf_json(void)
@@ -66,6 +105,7 @@ char *create_conf_json(void)
 	cJSON_AddTrueToObject(collection, "packages_in");
 	cJSON_AddTrueToObject(collection, "bytes_out");
 	cJSON_AddTrueToObject(collection, "bytes_in");
+	cJSON_AddTrueToObject(collection, "machine_ip");
 	cJSON_AddTrueToObject(collection, "proc_total");
 	cJSON_AddNumberToObject(collection, "sleep_time", 10);
 
@@ -411,7 +451,9 @@ bool collect_cpu_info(cJSON *collection, dict *collection_dict)
 		denominator = atoi(value) + numerator;
 		memset(value, 0, strlen(value));
 		memset(value_buf, 0, strlen(value_buf));
-		sprintf(value_buf, "%f", (float)numerator / (float)denominator);
+		sprintf(value_buf, "%f", ((float)numerator - old_cpu_use)/ ((float)denominator - old_cpu_total));
+		old_cpu_use = numerator;
+		old_cpu_total = denominator;
 		memcpy(value, value_buf, strlen(value_buf));
 
 		if(add_dict(collection_dict, "cpu_utilization", 2, value) == false)
@@ -961,6 +1003,17 @@ bool collect_network_info(cJSON *collection, dict *collection_dict)
 		}
 		memset(value, 0, strlen(value));
 		memset(value_buf, 0, strlen(value_buf));
+	}
+	if (cJSON_GetObjectItem(collection, "machine_ip")->type == true)
+	{
+		char *machine_ip = collect_machine_ip();
+		if(add_dict(collection_dict, "machine_ip", 2, machine_ip) == false)
+		{
+			printf("dict add error.\n");
+			return false;
+		}
+		free(machine_ip);
+		machine_ip = NULL;
 	}
 	free(value);
 	value = NULL;

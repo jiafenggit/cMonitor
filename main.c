@@ -15,7 +15,7 @@ int main(void)
 	int solider_listening_thread_flag = -1;
 	pthread_t solider_listening_thread;
 	init_conf();
-
+	init_old_cpu_info();
 	if ((activate_us_server__flag = pthread_create(&activate_us_server_thread, NULL, activate_unix_sock_server, NULL)) != 0)
 	{
 		perror("create pthread.");
