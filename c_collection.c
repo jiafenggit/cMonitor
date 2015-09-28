@@ -28,6 +28,7 @@ bool init_conf(void)
 		fclose(conf_fd);
 		free(conf_json);
 	}
+	return true;
 
 }
 
@@ -283,7 +284,7 @@ char* convert_to_json(dict *collection_dict)
 	dictEntry *head = NULL;
 
 	root = cJSON_CreateObject();
-	for (key_index == 0; key_index < collection_dict->hash_table[0].size; key_index++)
+	for (key_index = 0; key_index < collection_dict->hash_table[0].size; key_index++)
 	{
 		head = collection_dict->hash_table[0].table[key_index];
 		while(head && strlen(head->key) != 0)
@@ -295,7 +296,7 @@ char* convert_to_json(dict *collection_dict)
 	if(collection_dict->rehash_index != -1)
 	{
 	    head = NULL;
-	    for (key_index == 0; key_index < collection_dict->hash_table[1].size; key_index++)
+	    for (key_index = 0; key_index < collection_dict->hash_table[1].size; key_index++)
 	    {
 		    head = collection_dict->hash_table[1].table[key_index];
 		    while(head && strlen(head->key) != 0)
@@ -315,7 +316,6 @@ bool collect_cpu_info(cJSON *collection, dict *collection_dict)
 	char *value = NULL;
 	char *value_buf = NULL;
 	FILE *fd;
-	int count = 0;
 	int denominator = 0;
 	int numerator = 0;
 
@@ -646,8 +646,6 @@ bool collect_memory_info(cJSON *collection, dict *collection_dict)
 {
 	char *value = NULL;
 	char *value_buf = NULL;
-	FILE *fd;
-	int count = 0;
 	int denominator = 0;
 	int numerator = 0;
 	int buffer_cache = 0;
@@ -739,8 +737,6 @@ bool collect_swap_info(cJSON *collection, dict *collection_dict)
 {
 	char *value = NULL;
 	char *value_buf = NULL;
-	FILE *fd;
-	int count = 0;
 	int denominator = 0;
 	int numerator = 0;
 
@@ -910,9 +906,7 @@ bool collect_network_info(cJSON *collection, dict *collection_dict)
 	char *value = NULL;
 	char *value_buf = NULL;
 	FILE *fd;
-	int count = 0;
-	int denominator = 0;
-	int numerator = 0;
+
 
 	value = (char *)calloc(1024, sizeof(char));
 	value_buf = (char *)calloc(1024, sizeof(char));
@@ -921,6 +915,10 @@ bool collect_network_info(cJSON *collection, dict *collection_dict)
 		if ((fd = fopen("/proc/net/dev", "r")) == NULL)
 		{
 			perror("read /proc/net/dev.");
+			free(value);
+			value = NULL;
+			free(value_buf);
+			value_buf = NULL;
 			return false;
 		}
 		fgets(value_buf, 1024, fd);
@@ -932,6 +930,10 @@ bool collect_network_info(cJSON *collection, dict *collection_dict)
 		split(value, value_buf, ' ', 1);
 		if(add_dict(collection_dict, "bytes_in", 2, value) == false)
 		{
+			free(value);
+			value = NULL;
+			free(value_buf);
+			value_buf = NULL;
 			printf("dict add error.\n");
 			return false;
 		}
@@ -943,6 +945,10 @@ bool collect_network_info(cJSON *collection, dict *collection_dict)
 		if ((fd = fopen("/proc/net/dev", "r")) == NULL)
 		{
 			perror("read /proc/net/dev.");
+			free(value);
+			value = NULL;
+			free(value_buf);
+			value_buf = NULL;
 			return false;
 		}
 		fgets(value_buf, 1024, fd);
@@ -954,6 +960,10 @@ bool collect_network_info(cJSON *collection, dict *collection_dict)
 		split(value, value_buf, ' ', 2);
 		if(add_dict(collection_dict, "packages_in", 2, value) == false)
 		{
+			free(value);
+			value = NULL;
+			free(value_buf);
+			value_buf = NULL;
 			printf("dict add error.\n");
 			return false;
 		}
@@ -965,6 +975,10 @@ bool collect_network_info(cJSON *collection, dict *collection_dict)
 		if ((fd = fopen("/proc/net/dev", "r")) == NULL)
 		{
 			perror("read /proc/net/dev.");
+			free(value);
+			value = NULL;
+			free(value_buf);
+			value_buf = NULL;
 			return false;
 		}
 		fgets(value_buf, 1024, fd);
@@ -976,6 +990,10 @@ bool collect_network_info(cJSON *collection, dict *collection_dict)
 		split(value, value_buf, ' ', 9);
 		if(add_dict(collection_dict, "bytes_out", 2, value) == false)
 		{
+			free(value);
+			value = NULL;
+			free(value_buf);
+			value_buf = NULL;
 			printf("dict add error.\n");
 			return false;
 		}
@@ -987,6 +1005,10 @@ bool collect_network_info(cJSON *collection, dict *collection_dict)
 		if ((fd = fopen("/proc/net/dev", "r")) == NULL)
 		{
 			perror("read /proc/net/dev.");
+			free(value);
+			value = NULL;
+			free(value_buf);
+			value_buf = NULL;
 			return false;
 		}
 		fgets(value_buf, 1024, fd);
@@ -998,6 +1020,10 @@ bool collect_network_info(cJSON *collection, dict *collection_dict)
 		split(value, value_buf, ' ', 10);
 		if(add_dict(collection_dict, "packages_out", 2, value) == false)
 		{
+			free(value);
+			value = NULL;
+			free(value_buf);
+			value_buf = NULL;
 			printf("dict add error.\n");
 			return false;
 		}
@@ -1009,6 +1035,12 @@ bool collect_network_info(cJSON *collection, dict *collection_dict)
 		char *machine_ip = collect_machine_ip();
 		if(add_dict(collection_dict, "machine_ip", 2, machine_ip) == false)
 		{
+			free(machine_ip);
+			machine_ip = NULL;
+			free(value);
+			value = NULL;
+			free(value_buf);
+			value_buf = NULL;
 			printf("dict add error.\n");
 			return false;
 		}
@@ -1107,7 +1139,7 @@ bool collect_disk_info(cJSON *collection, dict *collection_dict)
 	}
 	if (remove(file_name) != 0)
 	{
-		perror('remove file.');
+		perror("remove file.");
 		exit(0);
 	}
 	free(value);
