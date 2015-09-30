@@ -126,7 +126,7 @@ char *create_conf_json(void)
 	cJSON_AddStringToObject(officer, "officer_ips", " ");
 
 	cJSON_AddItemToObject(root, "cluster", cluster = cJSON_CreateObject());
-	cJSON_AddNumberToObject(cluster, "group_size", 100);
+	cJSON_AddTrueToObject(cluster, "master");
 	cJSON_AddNumberToObject(cluster, "backup_officer_size", 3);
 
 
@@ -1029,23 +1029,6 @@ bool collect_network_info(cJSON *collection, dict *collection_dict)
 		}
 		memset(value, 0, strlen(value));
 		memset(value_buf, 0, strlen(value_buf));
-	}
-	if (cJSON_GetObjectItem(collection, "machine_ip")->type == true)
-	{
-		char *machine_ip = collect_machine_ip();
-		if(add_dict(collection_dict, "machine_ip", 2, machine_ip) == false)
-		{
-			free(machine_ip);
-			machine_ip = NULL;
-			free(value);
-			value = NULL;
-			free(value_buf);
-			value_buf = NULL;
-			printf("dict add error.\n");
-			return false;
-		}
-		free(machine_ip);
-		machine_ip = NULL;
 	}
 	free(value);
 	value = NULL;

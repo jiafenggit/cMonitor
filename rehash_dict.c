@@ -861,7 +861,7 @@ bool exist_key(dict *d, char *key)
     {
         if(strcmp(key, head->key) == 0)
         {
-            return true;
+		return true;
         }
         head = head->next;
     }
@@ -875,7 +875,7 @@ bool exist_key(dict *d, char *key)
         {
             if(strcmp(key, head->key) == 0)
             {
-                return true;
+		    return true;
             }
             head = head->next;
         }

@@ -35,7 +35,6 @@ void activate_unix_sock_server(void)
 		}
 		char recv_buf[1024];
 		read(client_sock, recv_buf,1024);
-		printf("recv:%s\n", recv_buf);
 		respond_dg(recv_buf);
 
 		write(client_sock, "4096", 8);
@@ -60,7 +59,6 @@ char *us_encap_datagram(int dg_type, char *datagram)
 	switch (dg_type) {
 	case MERGE_HOUR_TO_DAY:
 	{
-		printf("%s\n", collect_machine_uuid());
 		char *machine_uuid = collect_machine_uuid();
 		strcat(dg_message, machine_uuid);
 		free(machine_uuid);
@@ -311,7 +309,6 @@ void unix_sock_test(void)
 		char *send = us_encap_datagram(1024, " ");
 		write(sock, send, strlen(send));
 		read(sock, recvbuf, sizeof(recvbuf));
-		printf("recv:%s\n", recvbuf);
 		memset(send, '\0', sizeof(recvbuf));
 		memset(recvbuf,' \0', sizeof(recvbuf));
 		free(send);
@@ -344,7 +341,5 @@ char *send_and_recv_to_us(char *request_dg)
 	recvbuf = (char *)calloc(1024, sizeof(char));
 	write(us_sock, request_dg, strlen(request_dg));
 	read(us_sock, recvbuf, 1024);
-	printf("send and recv:%s\n", recvbuf);
-
 	return recvbuf;
 }

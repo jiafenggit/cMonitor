@@ -11,7 +11,6 @@ void activate_solider_collect(void)
 	{
 		sys_info_json = collect_sys_info();
 		sys_info_dg = mul_encap_datagram(RT_HOST, sys_info_json);
-		printf("current collect sys info:%s\n", sys_info_dg);
 		mulcast_dg(sys_info_dg);
 		free(sys_info_dg);
 		free(sys_info_json);
@@ -122,7 +121,7 @@ void mulcast_scaleout_dg(char *data)
 
 	mcast_addr.sin_addr.s_addr = inet_addr(solider_mul_addr);
 	mcast_addr.sin_port = htons(SCALEOUT_MCAST_PORT);
-	printf("scale out mulcast datagram:%s\n", data);
+	printf("add local host to cluster.\n");
 	int status = sendto(mcast_socket, data, strlen(data), 0, (struct sockaddr*)&mcast_addr, sizeof(mcast_addr));
 	if (status < 0)
 	{
@@ -309,7 +308,6 @@ void activate_solider_merge(void)
 			close(mul_socket);
 			exit(0);
 		}
-		printf("host msg: %s\n", buf);
 		if (mul_parse_datagram(buf, dg_dict) == false)
 		{
 			printf("parse datagram error.\n");
@@ -592,10 +590,6 @@ bool merge_solider_rtdg(dict *cluster_rt_dict, dict *rt_dg_dict, char *buf)
 {
 	char uuid[16];
 	fetch_dict_value(rt_dg_dict, "uuid", STRINGTYPE, uuid);
-//	if (exist_key(cluster_rt_dict, "flag") == false)
-//	{
-//		add_dict(cluster_rt_dict, "flag", STRINGTYPE, uuid);
-//	}
 	if (exist_key(cluster_rt_dict, uuid) == false)
 	{
 		add_dict(cluster_rt_dict, uuid, STRINGTYPE, buf);
@@ -618,13 +612,7 @@ bool merge_solider_rtdg(dict *cluster_rt_dict, dict *rt_dg_dict, char *buf)
 				cJSON *rt_dg_root;
 				char json_buf[MAX_BUF_SIZE];
 				split(json_buf, head->value.string_value, '|', 10);
-//				printf("times:%d\nkey:%s\n", key_index, head->key);
-//				printf("value:%s\n", json_buf);
 				rt_dg_root = cJSON_Parse(json_buf);
-//				time_t time_now;
-//				time(&time_now);
-//				char time_str[32];
-//				sprintf(time_str, "%d", time_now);
 				cJSON_AddItemToObject(cluster_rt_root, cJSON_GetObjectItem(rt_dg_root, "uuid")->valuestring, rt_dg_root);
 
 				head = head->next;
@@ -632,7 +620,7 @@ bool merge_solider_rtdg(dict *cluster_rt_dict, dict *rt_dg_dict, char *buf)
 		}
 		if(cluster_rt_dict->rehash_index != -1)
 		{
-			for (key_index == 0; key_index < cluster_rt_dict->hash_table[0].size; key_index++)
+			for (key_index == 0; key_index < cluster_rt_dict->hash_table[1].size; key_index++)
 			{
 			    head = NULL;
 			    head = cluster_rt_dict->hash_table[1].table[key_index];
@@ -653,7 +641,6 @@ bool merge_solider_rtdg(dict *cluster_rt_dict, dict *rt_dg_dict, char *buf)
 		}
 		sys_info_string = cJSON_Print(cluster_rt_root);
 		save_rr_dg(cluster_rt_root);
-		//mulcast_solider_dg(sys_info_string);
 		free(sys_info_string);
 		release_dict(cluster_rt_dict);
 		cluster_rt_dict = NULL;
@@ -668,7 +655,6 @@ bool save_rr_dg(cJSON *cluster_rt_root)
 	char *cluster_rr_dg = NULL;
 	cJSON *cluster_rr_dg_root;
 	FILE *cluster_rr_fd = NULL;
-	char *file_name[16];
 	int file_size;
 	if (access("/tmp/rt_datagram.json", F_OK) != -1)
 	{
@@ -681,8 +667,9 @@ bool save_rr_dg(cJSON *cluster_rt_root)
 		}
 		char *rt_dg_buf = cJSON_Print(cluster_rt_root);
 		fputs(rt_dg_buf, rt_dg_fd);
-		fclose(rt_dg_fd);
+		fclose(rt_dg_fd);	
 		free(rt_dg_buf);
+		save_rt_dg_to_all(cluster_rt_root);
 	}
 	else
 	{
@@ -697,7 +684,9 @@ bool save_rr_dg(cJSON *cluster_rt_root)
 		fputs(rt_dg_buf, rt_dg_fd);
 		fclose(rt_dg_fd);
 		free(rt_dg_buf);
+		save_rt_dg_to_all(cluster_rt_root);
 	}
+
 	if (access("/home/cf/conf/hour_datagram.json", F_OK) != -1)
 	{
 		if((cluster_rr_fd = fopen("/home/cf/conf/hour_datagram.json", "r")) == NULL)
@@ -705,7 +694,7 @@ bool save_rr_dg(cJSON *cluster_rt_root)
 			perror("open rr datagram file.");
 			fclose(cluster_rr_fd);
 			cJSON_Delete(cluster_rt_root);
-			exit(0);
+			return false;
 		}
 		fseek(cluster_rr_fd, 0, SEEK_END);
 		file_size = ftell(cluster_rr_fd);
@@ -716,7 +705,7 @@ bool save_rr_dg(cJSON *cluster_rt_root)
 			perror("calloc memory.");
 			fclose(cluster_rr_fd);
 			cJSON_Delete(cluster_rt_root);
-			exit(0);
+			return false;
 		}
 		fread(cluster_rr_dg, sizeof(char), file_size, cluster_rr_fd);
 		fclose(cluster_rr_fd);
@@ -784,6 +773,68 @@ bool save_rr_dg(cJSON *cluster_rt_root)
 	}
 }
 
+void save_rt_dg_to_all(cJSON *rt_dg)
+{
+	char *cur_time;
+	char *cur_uuid;
+	char *cur_machine_ip;
+	char *cur_dg_buf;
+	char *cur_line_buf;
+	cJSON *head;
+	timer_t time_now;
+	FILE *all_dg_fd;
+
+	if ((all_dg_fd = fopen("/tmp/all_datagram.data", "a+")) == NULL)
+	{
+		perror("create all datagram file.");
+		return false;
+	}
+	time(&time_now);
+	cur_time = (char *)calloc(16, sizeof(char));
+	cur_uuid = (char *)calloc(16, sizeof(char));
+	cur_machine_ip = (char *)calloc(16, sizeof(char));
+	sprintf(cur_time, "%ld", time_now);
+	head = rt_dg->child;
+
+	int rt_machine_size = 0;
+	while (head)
+	{
+		memcpy(cur_uuid, head->string, 16);
+		memcpy(cur_machine_ip, cJSON_GetObjectItem(head, "machine_ip")->valuestring, 16);
+		cur_dg_buf = cJSON_Print(head);
+		cur_line_buf = (char *)calloc(strlen(cur_dg_buf) + 48, sizeof(char));
+		strcat(cur_line_buf, cur_time);
+		strcat(cur_line_buf, "|");
+		strcat(cur_line_buf, cur_uuid);
+		strcat(cur_line_buf, "|");
+		strcat(cur_line_buf, cur_machine_ip);
+		strcat(cur_line_buf, "|");
+		strcat(cur_line_buf, cur_dg_buf);
+		if (strip(cur_line_buf) == false)
+		{
+			printf("strip cur line buf failed.\n");
+			exit(0);
+		}
+		strcat(cur_line_buf, "\n");
+		fputs(cur_line_buf, all_dg_fd);
+		free(cur_dg_buf);
+		cur_dg_buf = NULL;
+		free(cur_line_buf);
+		cur_line_buf = NULL;
+		memset(cur_uuid, 0, strlen(cur_uuid));
+		memset(cur_machine_ip, 0, strlen(cur_machine_ip));
+		head = head->next;
+		rt_machine_size++;
+	}
+	printf("%ssave real time datagram.\tmerge size:%d\n", ctime(&time_now), rt_machine_size);
+	fclose(all_dg_fd);
+	free(cur_time);
+	cur_time = NULL;
+	free(cur_uuid);
+	cur_uuid = NULL;
+	free(cur_machine_ip);
+	cur_machine_ip = NULL;
+}
 
 int mul_test(void)
 {
@@ -793,8 +844,8 @@ int mul_test(void)
 
 	if((mul_socket = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
 	{
-	perror("socket");
-	return -1;
+		perror("socket");
+		return -1;
 	}
 	memset(&local_address, 0, sizeof(local_address));
 	local_address.sin_family = AF_INET;
@@ -803,15 +854,15 @@ int mul_test(void)
 
 	if(bind(mul_socket, (struct sockaddr *)&local_address, sizeof(local_address)) < 0)
 	{
-	perror("bind");
-	return -1;
+		perror("bind");
+		return -1;
 	}
 
 	int loop = 1;
 	if (setsockopt(mul_socket,IPPROTO_IP,IP_MULTICAST_LOOP,&loop, sizeof(loop)) < 0)
 	{
-	perror("IP_MULTICAST_LOOP");
-	return 0;
+		perror("IP_MULTICAST_LOOP");
+		return 0;
 	}
 
 	struct ip_mreq mrep;
@@ -820,26 +871,26 @@ int mul_test(void)
 	//加入广播组
 	if (setsockopt(mul_socket,IPPROTO_IP,IP_ADD_MEMBERSHIP,&mrep, sizeof(mrep)) < 0)
 	{
-	perror("IP_ADD_MEMBERSHIP");
-	return 0;
+		perror("IP_ADD_MEMBERSHIP");
+		return 0;
 	}
 
 	while(1)
 	{
-	char buf[4096];
-	memset(buf, 0, sizeof(buf));
-	socklen_t address_len = sizeof(local_address);
-	if(recvfrom(mul_socket, buf, 4096, 0,(struct sockaddr *)&local_address, &address_len) < 0)
-	{
-	    perror("recvfrom");
-	}
-	printf("msg from server: %s\n", buf);
-	printf("count:%d\n", count++);
-	sleep(1);
+		char buf[4096];
+		memset(buf, 0, sizeof(buf));
+		socklen_t address_len = sizeof(local_address);
+		if(recvfrom(mul_socket, buf, 4096, 0,(struct sockaddr *)&local_address, &address_len) < 0)
+		{
+			perror("recvfrom");
+		}
+		printf("msg from server: %s\n", buf);
+		printf("count:%d\n", count++);
+		sleep(1);
 	}
 	if(setsockopt(mul_socket, IPPROTO_IP, IP_DROP_MEMBERSHIP,&mrep, sizeof(mrep)) < 0)
 	{
-	perror("setsockopt:IP_DROP_MEMBERSHIP");
+		perror("setsockopt:IP_DROP_MEMBERSHIP");
 	}
 	close(mul_socket);
 	return 0;
@@ -896,7 +947,7 @@ void activate_solider_scaleout(void)
 		{
 			perror("recvfrom");
 		}
-		printf("msg from server: %s\n", buf);
+
 		char type[8], uuid[16], machine_ip[16];
 		memset(type, 0, sizeof(type));
 		memset(uuid, 0, sizeof(uuid));
@@ -904,11 +955,12 @@ void activate_solider_scaleout(void)
 		split(type, buf , '|', 0);
 		split(uuid, buf , '|', 1);
 		split(machine_ip, buf , '|', 2);
+		printf("add new machine: %s\n", machine_ip);
 		if (atoi(type) == SCALEOUT_DG)
 		{
 			if (add_machine(uuid, machine_ip) == false)
 			{
-				printf("add a new machine to monitor failed.\n");
+				printf("add a new machine: %s to monitor failed.\n", machine_ip);
 				continue;
 			}
 		}
@@ -935,7 +987,7 @@ bool add_machine(char *uuid, char *machine_ip)
 	recv = send_and_recv_to_us(dg_message);
 	if (atoi(recv) != SUCCESS)
 	{
-		printf("add machine to unix sock server failed.\n");
+		printf("add machine:%s to unix sock server failed.\n", machine_ip);
 		free(recv);
 		recv = NULL;
 		free(dg_message);
@@ -984,7 +1036,6 @@ void activate_solider_listen(void)
 	    }
 	    memset(buf, 0, sizeof(buf));
 	    recv(client_sock, buf, sizeof(buf), 0);
-	    printf("recv content:%s\n", buf);
 	    char type[16];
 	    memset(type, 0, sizeof(type));
 	    if (split(type, buf, '|', 1) == false)
@@ -1023,7 +1074,7 @@ void activate_solider_listen(void)
 		    }
 		    while(fread(rt_dg_json, sizeof(char), 1024, rt_dg_fd))
 		    {
-			    printf("send content:%s\n", rt_dg_json);
+			    printf("respond a FETCH_RT_DG request\n");
 			    send(client_sock, rt_dg_json, strlen(rt_dg_json), 0);
 			    memset(rt_dg_json, 0, 1024);
 		    }
