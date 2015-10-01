@@ -115,6 +115,7 @@ void mulcast_scaleout_dg(char *data)
 	mcast_addr.sin_family = AF_INET;
 	char solider_mul_addr[20];
 	char *fetch_value_buf = fetch_key_key_value_str("network", "scale_out_multicast_add");
+	memset(solider_mul_addr, 0, sizeof(solider_mul_addr));
 	memcpy(solider_mul_addr, fetch_value_buf, 16);
 	free(fetch_value_buf);
 	fetch_value_buf = NULL;
@@ -261,6 +262,7 @@ void activate_solider_merge(void)
 		perror("socket");
 		return -1;
 	}
+	memset(type, 0, sizeof(type));
 	memset(&local_address, 0, sizeof(local_address));
 	local_address.sin_family = AF_INET;
 	local_address.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -280,6 +282,7 @@ void activate_solider_merge(void)
 	}
 	char solider_mul_addr[20];
 	char *fetch_value_buf = fetch_key_key_value_str("network", "solider_multicast_add");
+	memset(solider_mul_addr, 0, sizeof(solider_mul_addr));
 	memcpy(solider_mul_addr, fetch_value_buf, 16);
 	free(fetch_value_buf);
 	fetch_value_buf = NULL;
@@ -353,6 +356,7 @@ char *mul_encap_datagram(int dg_type, char *datagram)
 	char *dg_message;
 	char time_str[32];
 	time_t time_now;
+	memset(time_str, 0, sizeof(time_str));
 	if (strlen(datagram) >= MAX_BUF_SIZE- (32*10))
 	{
 		printf("datagram is too long.\n");
@@ -589,6 +593,7 @@ bool mul_parse_datagram(char *datagram, dict *dg_dict)
 bool merge_solider_rtdg(dict *cluster_rt_dict, dict *rt_dg_dict, char *buf)
 {
 	char uuid[16];
+	memset(uuid, 0, sizeof(uuid));
 	fetch_dict_value(rt_dg_dict, "uuid", STRINGTYPE, uuid);
 	if (exist_key(cluster_rt_dict, uuid) == false)
 	{
@@ -630,10 +635,6 @@ bool merge_solider_rtdg(dict *cluster_rt_dict, dict *rt_dg_dict, char *buf)
 				    char json_buf[MAX_BUF_SIZE];
 				    split(json_buf, head->value.string_value, '|', 10);
 				    rt_dg_root = cJSON_Parse(json_buf);
-//				    time_t time_now;
-//				    time(&time_now);
-//				    char time_str[32];
-//				    sprintf(time_str, "%d", time_now);
 				    cJSON_AddItemToObject(cluster_rt_root, cJSON_GetObjectItem(rt_dg_root, "uuid")->valuestring, rt_dg_root);
 				    head = head->next;
 			    }
@@ -926,6 +927,7 @@ void activate_solider_scaleout(void)
 	struct ip_mreq mrep;
 	char solider_mul_addr[20];
 	char *fetch_value_buf = fetch_key_key_value_str("network", "scale_out_multicast_add");
+	memset(solider_mul_addr, 0, sizeof(solider_mul_addr));
 	memcpy(solider_mul_addr, fetch_value_buf, 16);
 	free(fetch_value_buf);
 	fetch_value_buf = NULL;

@@ -50,6 +50,7 @@ char *us_encap_datagram(int dg_type, char *datagram)
 	char *dg_message;
 	char time_str[32];
 	time_t time_now;
+	memset(time_str, 0, sizeof(time_str));
 	dg_message = (char *)calloc(DG_MAX_SIZE, sizeof(char));
 	if (strlen(datagram) >= DG_MAX_SIZE - (32*10))
 	{
@@ -307,6 +308,7 @@ void unix_sock_test(void)
 		}
 		char recvbuf[4096];
 		char *send = us_encap_datagram(1024, " ");
+		memset(recvbuf, 0, sizeof(recvbuf));
 		write(sock, send, strlen(send));
 		read(sock, recvbuf, sizeof(recvbuf));
 		memset(send, '\0', sizeof(recvbuf));
