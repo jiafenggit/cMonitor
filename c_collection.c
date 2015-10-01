@@ -171,6 +171,7 @@ bool fetch_vaules_from_file(char *result_values,  char *file_path, short key_num
 	printf("Empty file path.\n");
         return false;
     }
+    memset(line_content, 0, sizeof(line_content));
     va_start(arg_ptr, key_num);
     for (; key_index < key_num;key_index++)
     {
@@ -212,6 +213,7 @@ bool fetch_vaules_from_file(char *result_values,  char *file_path, short key_num
                 }
             }
         }
+	memset(line_content, 0, sizeof(line_content));
     }
     fclose(fstream);
     return true;
@@ -596,6 +598,7 @@ char* collect_machine_uuid(void)
 	char *value_buf = NULL;
 	char *value = NULL;
 	char    mac[18];
+	memset(mac, 0, sizeof(mac));
 	int        nRtn = collect_mac_addr(mac, sizeof(mac));
 	if(nRtn < 0)
 	{
@@ -1050,6 +1053,7 @@ bool collect_disk_info(cJSON *collection, dict *collection_dict)
 	value_buf = (char *)calloc(1024, sizeof(char));
 	current_time_str = (char *)calloc(1024, sizeof(char));
 	command_buf = (char *)calloc(1024, sizeof(char));
+	memset(file_name, 0, sizeof(file_name));
 	memcpy(command_buf, "df -l >> ", 10);
 	time(&current_time);
 	sprintf(current_time_str, "%d", current_time);

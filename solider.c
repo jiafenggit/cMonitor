@@ -298,6 +298,7 @@ void activate_solider_merge(void)
 	cluster_rt_dict = create_dic();
 	while(true)
 	{
+		memset(type, 0, sizeof(type));
 		dg_dict = create_dic();
 		socklen_t address_len = sizeof(local_address);
 		memset(buf, 0, MAX_BUF_SIZE);
@@ -319,6 +320,7 @@ void activate_solider_merge(void)
 
 		fetch_dict_value(dg_dict, "type", STRINGTYPE, type);
 		char datagram[MAX_BUF_SIZE];
+		memset(datagram, 0, sizeof(datagram));
 		fetch_dict_value(dg_dict, "datagram", STRINGTYPE, datagram);
 		char mmh[16];
 		memset(mmh, 0, sizeof(mmh));
@@ -616,6 +618,7 @@ bool merge_solider_rtdg(dict *cluster_rt_dict, dict *rt_dg_dict, char *buf)
 			{
 				cJSON *rt_dg_root;
 				char json_buf[MAX_BUF_SIZE];
+				memset(json_buf, 0, sizeof(json_buf));
 				split(json_buf, head->value.string_value, '|', 10);
 				rt_dg_root = cJSON_Parse(json_buf);
 				cJSON_AddItemToObject(cluster_rt_root, cJSON_GetObjectItem(rt_dg_root, "uuid")->valuestring, rt_dg_root);
@@ -633,6 +636,7 @@ bool merge_solider_rtdg(dict *cluster_rt_dict, dict *rt_dg_dict, char *buf)
 			    {
 				    cJSON *rt_dg_root;
 				    char json_buf[MAX_BUF_SIZE];
+				    memset(json_buf, 0, sizeof(json_buf));
 				    split(json_buf, head->value.string_value, '|', 10);
 				    rt_dg_root = cJSON_Parse(json_buf);
 				    cJSON_AddItemToObject(cluster_rt_root, cJSON_GetObjectItem(rt_dg_root, "uuid")->valuestring, rt_dg_root);
@@ -751,6 +755,7 @@ bool save_rr_dg(cJSON *cluster_rt_root)
 		time_t time_now;
 		time(&time_now);
 		char time_str[32];
+		memset(time_str, 0, sizeof(time_str));
 		sprintf(time_str, "%d", time_now);
 		cJSON_AddItemToObject(cluster_rr_dg_root, time_str, cluster_rt_root);
 		if ((cluster_rr_fd = fopen("/home/cf/conf/hour_datagram.json", "a+")) == NULL)

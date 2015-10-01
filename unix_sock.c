@@ -34,6 +34,7 @@ void activate_unix_sock_server(void)
 			continue;
 		}
 		char recv_buf[1024];
+		memset(recv_buf, 0, sizeof(recv_buf));
 		read(client_sock, recv_buf,1024);
 		respond_dg(recv_buf);
 
