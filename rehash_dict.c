@@ -850,6 +850,11 @@ bool exist_key(dict *d, char *key)
     uint32_t key_index = 0;
     dictEntry *head = NULL;
 
+    if (d->hash_table[0].used == 0 && d->hash_table[1].used == 0)
+    {
+	    return false;
+    }
+
     if (d->rehash_index != -1)
     {
 	single_rehash_dict(d);

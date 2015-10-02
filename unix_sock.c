@@ -72,7 +72,7 @@ char *us_encap_datagram(int dg_type, char *datagram)
 		strcat(dg_message, mmh);
 		strcat(dg_message, "|");
 		time(&time_now);
-		sprintf(time_str, "%d", time_now);
+		sprintf(time_str, "%ld", (long)time_now);
 		strcat(dg_message, time_str);
 		strcat(dg_message, "|");
 		strcat(dg_message, "NULL");
@@ -312,8 +312,8 @@ void unix_sock_test(void)
 		memset(recvbuf, 0, sizeof(recvbuf));
 		write(sock, send, strlen(send));
 		read(sock, recvbuf, sizeof(recvbuf));
-		memset(send, '\0', sizeof(recvbuf));
-		memset(recvbuf,' \0', sizeof(recvbuf));
+		memset(send, 0, strlen(recvbuf));
+		memset(recvbuf,0, strlen(recvbuf));
 		free(send);
 		send = NULL;
 		sleep(10);

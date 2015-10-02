@@ -114,8 +114,6 @@ char *create_conf_json(void)
 	cJSON_AddTrueToObject(network, "send");
 	cJSON_AddTrueToObject(network, "recv");
 	cJSON_AddStringToObject(network, "solider_multicast_add", "224.0.0.19");
-//	cJSON_AddStringToObject(network, "officer_multicast_add", "224.0.0.20");
-//	cJSON_AddStringToObject(network, "rrd_multicast_add", "224.0.0.21");
 	cJSON_AddStringToObject(network, "scale_out_multicast_add", "224.0.0.20");
 	cJSON_AddNumberToObject(network, "listening port", 10241);
 
@@ -133,8 +131,6 @@ char *create_conf_json(void)
 	cJSON_AddItemToObject(root, "heartbeat", heartbeat = cJSON_CreateObject());
 	cJSON_AddNumberToObject(heartbeat, "sleep_time", 5);
 
-//	cJSON_AddItemToObject(root, "command", command = cJSON_CreateObject());
-//	cJSON_AddStringToObject(command, "command", " ");
 
 	conf_json = cJSON_Print(root);
 	cJSON_Delete(root);
@@ -482,7 +478,7 @@ bool collect_machine_info(cJSON *collection, dict *collection_dict){
 	value = (char *)calloc(1024, sizeof(char));
 	value_buf = (char *)calloc(1024, sizeof(char));
 	char *machine_ip = collect_machine_ip();
-	memcpy(value,  machine_ip, 1024);
+	memcpy(value,  machine_ip, strlen(machine_ip));
 	free(machine_ip);
 	machine_ip = NULL;
 	if(add_dict(collection_dict, "machine_ip", 2, value) == false)
@@ -616,7 +612,7 @@ char* collect_machine_uuid(void)
 	machine_ip = NULL;
 	uuid = murmurhash(uuid_str, (uint32_t )strlen(uuid_str), MMHASH_SEED);
 	memset(uuid_str, 0, sizeof(uuid_str));
-	sprintf(uuid_str, "%ld", uuid);
+	sprintf(uuid_str, "%ld", (long)uuid);
 	free(value);
 	value = NULL;
 	free(value_buf);
@@ -1056,8 +1052,8 @@ bool collect_disk_info(cJSON *collection, dict *collection_dict)
 	memset(file_name, 0, sizeof(file_name));
 	memcpy(command_buf, "df -l >> ", 10);
 	time(&current_time);
-	sprintf(current_time_str, "%d", current_time);
-	sprintf(file_name, "%ld", murmurhash(current_time_str, (uint32_t)strlen(current_time_str), MMHASH_SEED));
+	sprintf(current_time_str, "%ld", (long)current_time);
+	sprintf(file_name, "%ld", (long)murmurhash(current_time_str, (uint32_t)strlen(current_time_str), MMHASH_SEED));
 	strcat(command_buf, file_name);
 	system(command_buf);
 	free(current_time_str);

@@ -97,7 +97,6 @@ void machine_scale_out(void)
 	uuid = NULL;
 	free(machine_ip);
 	machine_ip = NULL;
-
 }
 
 void mulcast_scaleout_dg(char *data)
@@ -250,7 +249,6 @@ int fetch_key_key_value_int(char *first_key, char *second_key)
 void activate_solider_merge(void)
 {
 	int mul_socket;
-	int count  = 0;
 	struct sockaddr_in local_address;
 	char buf[MAX_BUF_SIZE];
 	dict *dg_dict = NULL;
@@ -260,7 +258,7 @@ void activate_solider_merge(void)
 	if((mul_socket = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
 	{
 		perror("socket");
-		return -1;
+		exit(0);
 	}
 	memset(type, 0, sizeof(type));
 	memset(&local_address, 0, sizeof(local_address));
@@ -271,14 +269,14 @@ void activate_solider_merge(void)
 	if(bind(mul_socket, (struct sockaddr *)&local_address, sizeof(local_address)) < 0)
 	{
 		perror("bind");
-		return -1;
+		exit(0);
 	}
 
 	int loop = 1;
 	if (setsockopt(mul_socket,IPPROTO_IP,IP_MULTICAST_LOOP,&loop, sizeof(loop)) < 0)
 	{
 		perror("IP_MULTICAST_LOOP");
-		return 0;
+		exit(0);
 	}
 	char solider_mul_addr[20];
 	char *fetch_value_buf = fetch_key_key_value_str("network", "solider_multicast_add");
@@ -293,7 +291,7 @@ void activate_solider_merge(void)
 	if (setsockopt(mul_socket,IPPROTO_IP,IP_ADD_MEMBERSHIP,&mrep, sizeof(mrep)) < 0)
 	{
 		perror("IP_ADD_MEMBERSHIP");
-		return 0;
+		exit(0);
 	}
 	cluster_rt_dict = create_dic();
 	while(true)
@@ -381,7 +379,7 @@ char *mul_encap_datagram(int dg_type, char *datagram)
 		mmh = NULL;
 		strcat(dg_message, "|");
 		time(&time_now);
-		sprintf(time_str, "%d", time_now);
+		sprintf(time_str, "%ld", (long)time_now);
 		strcat(dg_message, time_str);
 		strcat(dg_message, "|");
 		strcat(dg_message, "NULL");
@@ -415,7 +413,7 @@ char *mul_encap_datagram(int dg_type, char *datagram)
 		mmh = NULL;
 		strcat(dg_message, "|");
 		time(&time_now);
-		sprintf(time_str, "%d", time_now);
+		sprintf(time_str, "%ld", (long)time_now);
 		strcat(dg_message, time_str);
 		strcat(dg_message, "|");
 		strcat(dg_message, "NULL");
@@ -449,7 +447,7 @@ char *mul_encap_datagram(int dg_type, char *datagram)
 		mmh = NULL;
 		strcat(dg_message, "|");
 		time(&time_now);
-		sprintf(time_str, "%d", time_now);
+		sprintf(time_str, "%ld", (long)time_now);
 		strcat(dg_message, time_str);
 		strcat(dg_message, "|");
 		strcat(dg_message, "NULL");
@@ -483,7 +481,7 @@ char *mul_encap_datagram(int dg_type, char *datagram)
 		mmh = NULL;
 		strcat(dg_message, "|");
 		time(&time_now);
-		sprintf(time_str, "%d", time_now);
+		sprintf(time_str, "%ld", (long)time_now);
 		strcat(dg_message, time_str);
 		strcat(dg_message, "|");
 		strcat(dg_message, "NULL");
@@ -517,7 +515,7 @@ char *mul_encap_datagram(int dg_type, char *datagram)
 		mmh = NULL;
 		strcat(dg_message, "|");
 		time(&time_now);
-		sprintf(time_str, "%d", time_now);
+		sprintf(time_str, "%ld", (long)time_now);
 		strcat(dg_message, time_str);
 		strcat(dg_message, "|");
 		strcat(dg_message, "NULL");
@@ -540,6 +538,7 @@ char *mul_encap_datagram(int dg_type, char *datagram)
 		free(dg_message);
 		break;
 	}
+	return NULL;
 
 }
 
@@ -611,7 +610,7 @@ bool merge_solider_rtdg(dict *cluster_rt_dict, dict *rt_dg_dict, char *buf)
 
 
 		cluster_rt_root = cJSON_CreateObject();
-		for (key_index == 0; key_index < cluster_rt_dict->hash_table[0].size; key_index++)
+		for (key_index = 0; key_index < cluster_rt_dict->hash_table[0].size; key_index++)
 		{
 			head = cluster_rt_dict->hash_table[0].table[key_index];
 			while(head && strlen(head->key) != 0)
@@ -628,7 +627,7 @@ bool merge_solider_rtdg(dict *cluster_rt_dict, dict *rt_dg_dict, char *buf)
 		}
 		if(cluster_rt_dict->rehash_index != -1)
 		{
-			for (key_index == 0; key_index < cluster_rt_dict->hash_table[1].size; key_index++)
+			for (key_index = 0; key_index < cluster_rt_dict->hash_table[1].size; key_index++)
 			{
 			    head = NULL;
 			    head = cluster_rt_dict->hash_table[1].table[key_index];
@@ -647,6 +646,7 @@ bool merge_solider_rtdg(dict *cluster_rt_dict, dict *rt_dg_dict, char *buf)
 		sys_info_string = cJSON_Print(cluster_rt_root);
 		save_rr_dg(cluster_rt_root);
 		free(sys_info_string);
+		sys_info_string   = NULL;
 		release_dict(cluster_rt_dict);
 		cluster_rt_dict = NULL;
 		cluster_rt_dict = create_dic();
@@ -723,7 +723,7 @@ bool save_rr_dg(cJSON *cluster_rt_root)
 		char head_time_str[32];
 		memset(head_time_str, 0, 32);
 		memcpy(head_time_str, cluster_rr_dg_root->child->string, strlen(cluster_rr_dg_root->child->string));
-		sprintf(time_str, "%d", time_now);
+		sprintf(time_str, "%ld", (long)time_now);
 		long head_time = atol(head_time_str);
 		if (time_now - head_time >= 3600)
 		{
@@ -747,6 +747,7 @@ bool save_rr_dg(cJSON *cluster_rt_root)
 		cluster_rr_dg = NULL;
 		cJSON_Delete(cluster_rr_dg_root);
 		cluster_rr_dg_root = NULL;
+		cluster_rt_root = NULL;
 		return true;
 	}
 	else
@@ -756,7 +757,7 @@ bool save_rr_dg(cJSON *cluster_rt_root)
 		time(&time_now);
 		char time_str[32];
 		memset(time_str, 0, sizeof(time_str));
-		sprintf(time_str, "%d", time_now);
+		sprintf(time_str, "%ld", (long)time_now);
 		cJSON_AddItemToObject(cluster_rr_dg_root, time_str, cluster_rt_root);
 		if ((cluster_rr_fd = fopen("/home/cf/conf/hour_datagram.json", "a+")) == NULL)
 		{
@@ -775,6 +776,7 @@ bool save_rr_dg(cJSON *cluster_rt_root)
 		cluster_rr_dg = NULL;
 		cJSON_Delete(cluster_rr_dg_root);
 		cluster_rr_dg_root = NULL;
+		cluster_rt_root = NULL;
 		return true;
 	}
 }
@@ -787,26 +789,26 @@ void save_rt_dg_to_all(cJSON *rt_dg)
 	char *cur_dg_buf;
 	char *cur_line_buf;
 	cJSON *head;
-	timer_t time_now;
+	time_t time_now;
 	FILE *all_dg_fd;
 
 	if ((all_dg_fd = fopen("/tmp/all_datagram.data", "a+")) == NULL)
 	{
 		perror("create all datagram file.");
-		return false;
+		exit(0);
 	}
 	time(&time_now);
 	cur_time = (char *)calloc(16, sizeof(char));
 	cur_uuid = (char *)calloc(16, sizeof(char));
 	cur_machine_ip = (char *)calloc(16, sizeof(char));
-	sprintf(cur_time, "%ld", time_now);
+	sprintf(cur_time, "%ld", (long)time_now);
 	head = rt_dg->child;
 
 	int rt_machine_size = 0;
 	while (head)
 	{
-		memcpy(cur_uuid, head->string, 16);
-		memcpy(cur_machine_ip, cJSON_GetObjectItem(head, "machine_ip")->valuestring, 16);
+		memcpy(cur_uuid, head->string, strlen(head->string));
+		memcpy(cur_machine_ip, cJSON_GetObjectItem(head, "machine_ip")->valuestring, strlen(cJSON_GetObjectItem(head, "machine_ip")->valuestring));
 		cur_dg_buf = cJSON_Print(head);
 		cur_line_buf = (char *)calloc(strlen(cur_dg_buf) + 48, sizeof(char));
 		strcat(cur_line_buf, cur_time);
@@ -1034,7 +1036,7 @@ void activate_solider_listen(void)
 	    struct sockaddr_in client_addr;
 	    socklen_t len = sizeof(client_addr);
 
-	    int client_sock = accept(listen_sock, (struct listen_addr *)&client_addr, &len);
+	    int client_sock = accept(listen_sock, (struct sockaddr *)&client_addr, &len);
 	    if (client_sock < 0)
 	    {
 		    perror("accept.");
@@ -1063,12 +1065,12 @@ void activate_solider_listen(void)
 		    if (access("/tmp/rt_datagram.json", R_OK) != 0)
 		    {
 			    printf("No read permission.\n");
-			    return false;
+			    exit(0);
 		    }
 		    if ((rt_dg_fd = fopen("/tmp/rt_datagram.json", "r")) == NULL)
 		    {
 			    perror("open alive machine file.");
-			    return false;
+			    exit(0);
 		    }
 		    fseek(rt_dg_fd, 0, SEEK_SET);
 		    rt_dg_json = (char *)calloc(1024, sizeof(char));
@@ -1138,7 +1140,7 @@ void respond_hb(int client_sock, char *buf)
 	if (ret == -1)
 	{
 		printf("send error.\n");
-		return NULL;
+		exit(0);
 	}
 	free(respond_dg);
 	respond_dg = NULL;
@@ -1167,17 +1169,15 @@ char *listen_encap_datagram(int type, ...)
 	default:
 		break;
 	}
+	return NULL;
 }
 
 
-char *fetch_alive_machines(void)
-{
-	cJSON *machines_root;
-
-	machines_root = cJSON_CreateObject();
-
-
-}
+//char *fetch_alive_machines(void)
+//{
+//	cJSON *machines_root;
+//	machines_root = cJSON_CreateObject();
+//}
 
 
 

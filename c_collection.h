@@ -37,6 +37,7 @@ bool collect_network_info(cJSON *collection, dict *collection_dict);
 bool collect_disk_info(cJSON *collection, dict *collection_dict);
 char* collect_machine_ip(void);
 char* collect_machine_uuid(void);
+int collect_mac_addr(char * mac, int len_limit);
 
 
 #endif // C_COLLECTION

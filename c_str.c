@@ -65,7 +65,7 @@ bool split_strip(char *str, char *split_chr)
     buf_head = buf;
     while (*str != '\0')
     {
-	if((*str) != split_chr)
+	if((*str) != (*split_chr))
         {
             *buf = *str;
             buf++;

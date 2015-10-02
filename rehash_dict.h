@@ -33,9 +33,9 @@ typedef struct dictEntry{
 
 typedef struct dictHT{
     dictEntry **table;
-    unsigned long size;
-    unsigned long size_mask;
-    unsigned long used;
+    int size;
+    int size_mask;
+    int used;
 }dictHT;
 
 typedef struct dict {
