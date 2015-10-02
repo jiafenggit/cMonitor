@@ -12,8 +12,13 @@ int main(void)
 	pthread_t activate_us_server_thread;
 	int solider_merge_thread_flag = -1;
 	pthread_t solider_merge_thread;
+	int solider_scaleout_thread_flag = -1;
+	pthread_t solider_scaleout_thread;
+	int machine_scale_out_thread_flag = -1;
+	pthread_t machine_scale_out_thread;
 	int solider_listening_thread_flag = -1;
 	pthread_t solider_listening_thread;
+
 	init_conf();
 	init_old_cpu_info();
 	if ((activate_us_server__flag = pthread_create(&activate_us_server_thread, NULL, activate_unix_sock_server, NULL)) != 0)
@@ -21,12 +26,6 @@ int main(void)
 		perror("create pthread.");
 		exit(0);
 	}
-//	if ((solider_collect_thread_flag = pthread_create(&solider_merge_thread, NULL, unix_sock_test, NULL)) != 0)
-//	{
-//		perror("create pthread.");
-//		exit(0);
-//	}
-
 	if (fetch_key_key_value_bool("network", "send") == true)
 	{
 		if ((solider_collect_thread_flag = pthread_create(&solider_collect_thread, NULL, activate_solider_collect, NULL)) != 0)
@@ -43,12 +42,12 @@ int main(void)
 			exit(0);
 		}
 	}
-	if ((solider_collect_thread_flag = pthread_create(&solider_collect_thread, NULL, activate_solider_scaleout, NULL)) != 0)
+	if ((solider_scaleout_thread_flag = pthread_create(&solider_scaleout_thread, NULL, activate_solider_scaleout, NULL)) != 0)
 	{
 		perror("create pthread.");
 		exit(0);
 	}
-	if ((solider_merge_thread_flag = pthread_create(&solider_collect_thread, NULL, machine_scale_out, NULL)) != 0)
+	if ((machine_scale_out_thread_flag = pthread_create(&machine_scale_out_thread, NULL, machine_scale_out, NULL)) != 0)
 	{
 		perror("create pthread.");
 		exit(0);
@@ -72,6 +71,14 @@ int main(void)
 	if (solider_merge_thread_flag == 0)
 	{
 		pthread_join(solider_merge_thread, NULL);
+	}
+	if (solider_scaleout_thread_flag == 0)
+	{
+		pthread_join(solider_scaleout_thread, NULL);
+	}
+	if (machine_scale_out_thread_flag == 0)
+	{
+		pthread_join(machine_scale_out_thread, NULL);
 	}
 	if (solider_listening_thread_flag == 0)
 	{

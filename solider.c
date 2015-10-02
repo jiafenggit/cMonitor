@@ -904,7 +904,6 @@ int mul_test(void)
 void activate_solider_scaleout(void)
 {
 	int mul_socket;
-	int count  = 0;
 	struct sockaddr_in local_address;
 
 	if((mul_socket = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
