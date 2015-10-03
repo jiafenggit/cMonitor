@@ -888,6 +888,61 @@ bool exist_key(dict *d, char *key)
     return false;
 }
 
+//bool single_rehash_dict(dict *d)
+//{
+//    dictEntry *head = NULL;
+//    dictEntry *tail = NULL;
+//    int dict_entry_index = 0;
+//    int count = 0;
+//    uint32_t key_index = 0;
+
+//    for (; dict_entry_index < d->hash_table[0].size; dict_entry_index++)
+//    {
+//	head = d->hash_table[0].table[dict_entry_index];
+//        if (head == NULL)
+//        {
+//            continue;
+//        }
+//        else
+//        {
+//            key_index = murmurhash(head->key, (uint32_t)strlen(head->key), MMHASH_SEED);
+//            key_index = d->hash_table[1].size_mask & key_index;
+//	    d->hash_table[1].table[key_index] = head;
+//	    d->hash_table[0].table[dict_entry_index] = NULL;
+//            d->hash_table[1].used++;
+//            d->rehash_index++;
+
+//	    return true;
+//        }
+//    }
+//    d->hash_table[1].used = d->hash_table[0].used;
+//    free(d->hash_table[0].table);
+//    d->hash_table[0].table = NULL;
+//    d->hash_table[0].table = (dictEntry **)calloc(d->hash_table[1].size, sizeof(dictEntry*));
+//    for (count = 0; count < d->hash_table[1].size; count ++)
+//    {
+//	    if (d->hash_table[1].table[count] == NULL)
+//	    {
+//		    d->hash_table[0].table[count] = NULL;
+//	    }
+//	    else
+//	    {
+//		    d->hash_table[0].table[count] = d->hash_table[1].table[count];
+//	    }
+//    }
+//    d->hash_table[0].size = d->hash_table[1].size;
+//    d->hash_table[0].size_mask = d->hash_table[1].size_mask;
+//    d->hash_table[0].used = d->hash_table[1].used;
+//    free(d->hash_table[1].table);
+//    d->hash_table[1].table = NULL;
+//    d->hash_table[1].size = 0;
+//    d->hash_table[1].size_mask = 0;
+//    d->hash_table[1].used = 0;
+//    d->rehash_index = -1;
+
+//    return true;
+//}
+
 bool single_rehash_dict(dict *d)
 {
     dictEntry *head = NULL;
@@ -899,31 +954,18 @@ bool single_rehash_dict(dict *d)
     for (; dict_entry_index < d->hash_table[0].size; dict_entry_index++)
     {
 	head = d->hash_table[0].table[dict_entry_index];
-        if (head == NULL)
-        {
-            continue;
-        }
-        else
-        {
-            key_index = murmurhash(head->key, (uint32_t)strlen(head->key), MMHASH_SEED);
-            key_index = d->hash_table[1].size_mask & key_index;
+	if (head == NULL)
+	{
+	    continue;
+	}
+	else
+	{
+	    key_index = murmurhash(head->key, (uint32_t)strlen(head->key), MMHASH_SEED);
+	    key_index = d->hash_table[1].size_mask & key_index;
 	    d->hash_table[1].table[key_index] = head;
 	    d->hash_table[0].table[dict_entry_index] = NULL;
-            d->hash_table[1].used++;
-            d->rehash_index++;
-//            while(head->next)
-//            {
-//                tail = head->next;
-//                while(tail->next)
-//                {
-//                    tail = tail->next;
-//                }
-//                free(tail);
-//                tail = NULL;
-//            }
-
-	    return true;
-        }
+	    d->rehash_index++;
+	}
     }
     d->hash_table[1].used = d->hash_table[0].used;
     free(d->hash_table[0].table);
@@ -940,7 +982,6 @@ bool single_rehash_dict(dict *d)
 		    d->hash_table[0].table[count] = d->hash_table[1].table[count];
 	    }
     }
-    //d->hash_table[0].table = d->hash_table[1].table;
     d->hash_table[0].size = d->hash_table[1].size;
     d->hash_table[0].size_mask = d->hash_table[1].size_mask;
     d->hash_table[0].used = d->hash_table[1].used;
