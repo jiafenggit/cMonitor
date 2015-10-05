@@ -21,6 +21,7 @@
 #include <stdbool.h>
 #include<sys/un.h>
 #include "c_collection.h"
+#include "configuration.h"
 #include "macro_definition.h"
 
 

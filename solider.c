@@ -224,11 +224,6 @@ void activate_solider_merge(void)
 			merge_solider_rtdg(cluster_rt_dict, dg_dict, buf);
 		}
 			break;
-		case RT_GROUP:
-		{
-			;
-		}
-			break;
 		default:
 			break;
 		}

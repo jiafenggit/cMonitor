@@ -3,6 +3,7 @@
 #include "solider.h"
 #include "unix_sock.h"
 #include "heartbeat.h"
+#include "configuration.h"
 
 
 int main(void)
