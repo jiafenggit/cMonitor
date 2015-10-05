@@ -17,12 +17,13 @@
 #include <sys/shm.h>
 #include "cJSON.h"
 #include "rehash_dict.h"
+#include "configuration.h"
 
 int old_cpu_use, old_cpu_total;
 
-bool init_conf(void);
+
 bool init_old_cpu_info(void);
-char *create_conf_json(void);
+
 bool fetch_value(char *result_value, char *origin_str);
 bool fetch_vaules_from_file(char *result_values,  char *file_path, short key_num, ...);
 char * collect_sys_info(void);

@@ -11,7 +11,8 @@ SOURCES += main.c \
     rehash_dict.c \
     solider.c \
     heartbeat.c \
-    unix_sock.c
+    unix_sock.c \
+    configuration.c
 
 include(deployment.pri)
 qtcAddDeployment()
@@ -24,6 +25,8 @@ HEADERS += \
     rehash_dict.h \
     solider.h \
     heartbeat.h \
-    unix_sock.h
+    unix_sock.h \
+    configuration.h \
+    macro_definition.h
 
 LIBS += -lpthread

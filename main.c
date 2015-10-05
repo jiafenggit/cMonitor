@@ -2,6 +2,7 @@
 #include <pthread.h>
 #include "solider.h"
 #include "unix_sock.h"
+#include "heartbeat.h"
 
 
 int main(void)
@@ -18,6 +19,8 @@ int main(void)
 	pthread_t machine_scale_out_thread;
 	int solider_listening_thread_flag = -1;
 	pthread_t solider_listening_thread;
+	int heartbeat_thread_flag = -1;
+	pthread_t heartbeat_thread;
 
 	init_conf();
 	init_old_cpu_info();
@@ -57,6 +60,11 @@ int main(void)
 		perror("create pthread.");
 		exit(0);
 	}
+	if ((heartbeat_thread_flag = pthread_create(&heartbeat_thread, NULL, activate_solider_heartbeat, NULL)) != 0)
+	{
+		perror("create pthread.");
+		exit(0);
+	}
 
 
 
@@ -83,6 +91,10 @@ int main(void)
 	if (solider_listening_thread_flag == 0)
 	{
 		pthread_join(solider_listening_thread, NULL);
+	}
+	if (heartbeat_thread_flag == 0)
+	{
+		pthread_join(heartbeat_thread, NULL);
 	}
 
 

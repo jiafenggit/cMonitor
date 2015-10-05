@@ -9,10 +9,12 @@ void activate_unix_sock_server(void)
 		perror("unix socket");
 		exit(0);
 	}
-	unlink("/tmp/monitor_solider.sock");
+	int opt=1;
+	setsockopt(listen_sock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+	unlink("/tmp/cMonitor/monitor_solider.sock");
 	struct sockaddr_un server_addr;
 	server_addr.sun_family = AF_UNIX;
-	strcpy(server_addr.sun_path, "/tmp/monitor_solider.sock");
+	strcpy(server_addr.sun_path, "/tmp/cMonitor/monitor_solider.sock");
 
 	if (bind(listen_sock, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0)
 	{
@@ -118,6 +120,70 @@ void respond_dg(char *data_gram)
 		free(type);
 		free(uuid);
 		free(machine_ip);
+		if (sync_alive_machines_mul() == false)
+		{
+			printf("sync alive machines failed.\n");
+			exit(0);
+		}
+	}
+		break;
+	case DEL_MACHINE:
+	{
+		char *uuid = str_split(data_gram, '|', 1);
+		char *machine_ip = str_split(data_gram, '|', 2);
+		if (del_machine_from_file(uuid, machine_ip) == false)
+		{
+			printf("del machine to cluster failed.\n");
+			free(type);
+			free(uuid);
+			free(machine_ip);
+			exit(0);
+		}
+		if (sync_dead_machines_mul(uuid, machine_ip) == false)
+		{
+			printf("sync dead machines failed.\n");
+			free(machine_ip);
+			free(type);
+			free(uuid);
+			exit(0);
+		}
+		free(machine_ip);
+		free(type);
+		free(uuid);
+	}
+		break;
+	case SYNC_ALIVE_MACHINE:
+	{
+		char *uuid = str_split(data_gram, '|', 1);
+		char *machine_ip = str_split(data_gram, '|', 2);
+		if (add_machine_to_file(uuid, machine_ip) == false)
+		{
+			printf("add machine to cluster failed.\n");
+			free(type);
+			free(uuid);
+			free(machine_ip);
+			exit(0);
+		}
+		free(type);
+		free(uuid);
+		free(machine_ip);
+	}
+		break;
+	case SYNC_DEAD_MACHINE:
+	{
+		char *uuid = str_split(data_gram, '|', 1);
+		char *machine_ip = str_split(data_gram, '|', 2);
+		if (del_machine_from_file(uuid, machine_ip) == false)
+		{
+			printf("del machine to cluster failed.\n");
+			free(type);
+			free(uuid);
+			free(machine_ip);
+			exit(0);
+		}
+		free(type);
+		free(uuid);
+		free(machine_ip);
 	}
 		break;
 	default:
@@ -130,14 +196,14 @@ bool add_machine_to_file(char *uuid, char *machine_ip)
 	char *alive_machine_json = NULL;
 	cJSON *root;
 	FILE *alive_machine_fd = NULL;
-	if (access("/home/cf/conf/alive_machine.json", F_OK) != -1)
+	if (access("/tmp/cMonitor/alive_machine.json", F_OK) != -1)
 	{
-		if (access("/home/cf/conf/alive_machine.json", R_OK) != 0)
+		if (access("/tmp/cMonitor/alive_machine.json", R_OK) != 0)
 		{
 			printf("No read permission.\n");
 			return false;
 		}
-		if ((alive_machine_fd = fopen("/home/cf/conf/alive_machine.json", "r")) == NULL)
+		if ((alive_machine_fd = fopen("/tmp/cMonitor/alive_machine.json", "r")) == NULL)
 		{
 			perror("open alive machine file.");
 			return false;
@@ -174,7 +240,7 @@ bool add_machine_to_file(char *uuid, char *machine_ip)
 		free(alive_machine_json);
 		alive_machine_json = NULL;
 		alive_machine_json = cJSON_Print(root);
-		if ((alive_machine_fd = fopen("/home/cf/conf/alive_machine.json", "w")) == NULL)
+		if ((alive_machine_fd = fopen("/tmp/cMonitor/alive_machine.json", "w")) == NULL)
 		{
 			perror("open alive machine file.");
 			free(alive_machine_json);
@@ -193,7 +259,7 @@ bool add_machine_to_file(char *uuid, char *machine_ip)
 	{
 		root = cJSON_CreateObject();
 		cJSON_AddStringToObject(root,  uuid, machine_ip);
-		if ((alive_machine_fd = fopen("/home/cf/conf/alive_machine.json", "a+")) == NULL)
+		if ((alive_machine_fd = fopen("/tmp/cMonitor/alive_machine.json", "a+")) == NULL)
 		{
 			perror("open alive machine file.");
 			return false;
@@ -207,15 +273,182 @@ bool add_machine_to_file(char *uuid, char *machine_ip)
 	}
 }
 
+bool del_machine_from_file(char *uuid, char *machine_ip)
+{
+	char *alive_machine_json = NULL;
+	cJSON *root;
+	FILE *alive_machine_fd = NULL;
+	if (access("/tmp/cMonitor/alive_machine.json", F_OK) != -1)
+	{
+		if (access("/tmp/cMonitor/alive_machine.json", R_OK) != 0)
+		{
+			printf("No read permission.\n");
+			return false;
+		}
+		if ((alive_machine_fd = fopen("/tmp/cMonitor/alive_machine.json", "r")) == NULL)
+		{
+			perror("open alive machine file.");
+			return false;
+		}
+		fseek(alive_machine_fd, 0, SEEK_END);
+		int alive_machine_file_size = ftell(alive_machine_fd);
+		fseek(alive_machine_fd, 0, SEEK_SET);
+		alive_machine_json = (char *)calloc(alive_machine_file_size + 1, sizeof(char));
+		if (alive_machine_json == NULL)
+		{
+			perror("calloc memory.");
+			fclose(alive_machine_fd);
+			exit(0);
+		}
+		fread(alive_machine_json, sizeof(char), alive_machine_file_size, alive_machine_fd);
+		fclose(alive_machine_fd);
+
+
+		root = cJSON_Parse(alive_machine_json);
+		cJSON *child = root->child;
+		while(child)
+		{
+			if (strcmp(child->string, uuid) == 0)
+			{
+				if (child->next == NULL)
+				{
+					if (child->prev != NULL)
+					{
+						child->prev->next = NULL;
+					}
+					else
+					{
+						root->child = root->child->next;
+					}
+				}
+				else
+				{
+					if (child->prev != NULL)
+					{
+						child->prev->next = child->next;
+					}
+					else
+					{
+						root->child = root->child->next;
+					}
+					child->next->prev = child->prev;
+				}
+				child->next = NULL;
+				child->prev = NULL;
+				cJSON_Delete(child);
+				free(alive_machine_json);
+				alive_machine_json = NULL;
+				alive_machine_json = cJSON_Print(root);
+				if ((alive_machine_fd = fopen("/tmp/cMonitor/alive_machine.json", "w")) == NULL)
+				{
+					perror("open alive machine file.");
+					free(alive_machine_json);
+					alive_machine_json = NULL;
+					cJSON_Delete(root);
+					return false;
+				}
+				fwrite(alive_machine_json, sizeof(char), strlen(alive_machine_json), alive_machine_fd);
+				fclose(alive_machine_fd);
+				free(alive_machine_json);
+				cJSON_Delete(root);
+				return true;
+			}
+			child = child->next;
+		}
+		free(alive_machine_json);
+		alive_machine_json = NULL;
+		cJSON_Delete(root);
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+
+
+}
+
+bool sync_alive_machines_mul(void)
+{
+	char *dg_message;
+	dg_message = (char *)calloc(1024, sizeof(char));
+	strcat(dg_message, "2055");
+	strcat(dg_message, "|");
+	char *uuid = collect_machine_uuid();
+	char *machine_ip = collect_machine_ip();
+	strcat(dg_message, uuid);
+	strcat(dg_message, "|");
+	strcat(dg_message, machine_ip);
+	mulcast_sync_dg(dg_message);
+	free(dg_message);
+	dg_message = NULL;
+	free(uuid);
+	uuid = NULL;
+	free(machine_ip);
+	machine_ip = NULL;
+	return true;
+}
+
+bool sync_dead_machines_mul(char *uuid, char *target_ip)
+{
+	char *dg_message;
+	dg_message = (char *)calloc(1024, sizeof(char));
+	strcat(dg_message, "2056");
+	strcat(dg_message, "|");
+	strcat(dg_message, uuid);
+	strcat(dg_message, "|");
+	strcat(dg_message, target_ip);
+	mulcast_sync_dg(dg_message);
+	free(dg_message);
+	dg_message = NULL;
+	return true;
+}
+
+
+
+void mulcast_sync_dg(char *data)
+{
+	struct sockaddr_in mcast_addr;
+	int mcast_socket;
+
+	mcast_socket = socket(AF_INET, SOCK_DGRAM, 0);
+	if (mcast_socket == -1)
+	{
+		perror("mcast socket()");
+		exit(-1);
+	}
+	int opt=1;
+	setsockopt(mcast_socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+	memset(&mcast_addr, 0, sizeof(mcast_addr));
+	mcast_addr.sin_family = AF_INET;
+	char solider_mul_addr[20];
+	char *fetch_value_buf = fetch_key_key_value_str("network", "scale_out_multicast_add");
+	memset(solider_mul_addr, 0, sizeof(solider_mul_addr));
+	memcpy(solider_mul_addr, fetch_value_buf, 16);
+	free(fetch_value_buf);
+	fetch_value_buf = NULL;
+
+	mcast_addr.sin_addr.s_addr = inet_addr(solider_mul_addr);
+	mcast_addr.sin_port = htons(SCALEOUT_MCAST_PORT);
+	printf("sync machines.\n");
+	int status = sendto(mcast_socket, data, strlen(data), 0, (struct sockaddr*)&mcast_addr, sizeof(mcast_addr));
+	if (status < 0)
+	{
+		perror("sendto()");
+		exit(-1);
+	}
+	close(mcast_socket);
+}
+
 //bool merge_hour_to_day(void)
 //{
 //	char *day_dg = NULL;
 //	cJSON *day_dg_root;
 //	FILE *day_fd = NULL;
 //	int file_size;
-//	if (access("/tmp/day_datagram.json", F_OK) != -1)
+//	if (access("/tmp/cMonitor/day_datagram.json", F_OK) != -1)
 //	{
-//		if((day_fd = fopen("/tmp/day_datagram.json", "r")) == NULL)
+//		if((day_fd = fopen("/tmp/cMonitor/day_datagram.json", "r")) == NULL)
 //		{
 //			perror("open day datagram file.");
 //			exit(0);
@@ -238,7 +471,7 @@ bool add_machine_to_file(char *uuid, char *machine_ip)
 //		char time_str[32];
 //		sprintf(time_str, "%d", time_now);
 //		cJSON_AddItemToObject(day_dg_root, time_str, rt_dg);
-//		if ((day_fd = fopen("/tmp/hour_datagram.json", "w")) == NULL)
+//		if ((day_fd = fopen("/tmp/cMonitor/hour_datagram.json", "w")) == NULL)
 //		{
 //			perror("open day datagram file.");
 //			fclose(day_fd);
@@ -265,7 +498,7 @@ bool add_machine_to_file(char *uuid, char *machine_ip)
 //		char time_str[32];
 //		sprintf(time_str, "%d", time_now);
 //		cJSON_AddItemToObject(day_dg_root, time_str, rt_dg);
-//		if ((day_fd = fopen("/tmp/hour_datagram.json", "a+")) == NULL)
+//		if ((day_fd = fopen("/tmp/cMonitor/hour_datagram.json", "a+")) == NULL)
 //		{
 //			perror("create day datagram file.");
 //			fclose(day_fd);
@@ -297,10 +530,12 @@ void unix_sock_test(void)
 			perror("socket");
 			exit(0);
 		}
+		int opt=1;
+		setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 		struct sockaddr_un serveraddr;
 		memset(&serveraddr, 0, sizeof(serveraddr));
 		serveraddr.sun_family = AF_UNIX;
-		strcpy(serveraddr.sun_path, "/tmp/monitor_solider.sock");
+		strcpy(serveraddr.sun_path, "/tmp/cMonitor/monitor_solider.sock");
 
 		if (connect(sock, (struct sockaddr *)&serveraddr, sizeof(serveraddr)) < 0)
 		{
@@ -317,7 +552,6 @@ void unix_sock_test(void)
 		free(send);
 		send = NULL;
 		sleep(10);
-//		close(sock);
 	}
 }
 
@@ -330,10 +564,12 @@ char *send_and_recv_to_us(char *request_dg)
 		perror("socket");
 		exit(0);
 	}
+	int opt=1;
+	setsockopt(us_sock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 	struct sockaddr_un serveraddr;
 	memset(&serveraddr, 0, sizeof(serveraddr));
 	serveraddr.sun_family = AF_UNIX;
-	strcpy(serveraddr.sun_path, "/tmp/monitor_solider.sock");
+	strcpy(serveraddr.sun_path, "/tmp/cMonitor/monitor_solider.sock");
 
 	if (connect(us_sock, (struct sockaddr *)&serveraddr, sizeof(serveraddr)) < 0)
 	{

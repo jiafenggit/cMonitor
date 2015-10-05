@@ -1,37 +1,6 @@
 #include "c_collection.h"
 
 
-
-bool init_conf(void)
-{
-	char *conf_json = NULL;
-	FILE *conf_fd = NULL;
-	if (access("/tmp/cCollection.conf.json", F_OK) != -1)
-	{
-		if (access("/tmp/cCollection.conf.json", R_OK) != 0)
-		{
-			printf("No read permission.\n");
-			return false;
-		}
-		return true;
-	}
-	else
-	{
-		conf_json = create_conf_json();
-		printf("conf:%s\n", conf_json);
-		if ((conf_fd = fopen("/tmp/cCollection.conf.json", "a+")) == NULL)
-		{
-			perror("open conf file.");
-			return false;
-		}
-		fputs(conf_json, conf_fd);
-		fclose(conf_fd);
-		free(conf_json);
-	}
-	return true;
-
-}
-
 bool init_old_cpu_info(void)
 {
 	char *value = NULL;
@@ -69,85 +38,19 @@ bool init_old_cpu_info(void)
 	return true;
 }
 
-char *create_conf_json(void)
-{
-	cJSON *root, *collection, *network, *heartbeat, *solider, *officer, *cluster;
-	char *conf_json = NULL;
 
-	root = cJSON_CreateObject();
-	cJSON_AddItemToObject(root, "collection", collection = cJSON_CreateObject());
-	cJSON_AddTrueToObject(collection, "machine_type");
-	cJSON_AddTrueToObject(collection, "boot_time");
-	cJSON_AddTrueToObject(collection, "os_name");
-	cJSON_AddTrueToObject(collection, "host_ip");
-	cJSON_AddTrueToObject(collection, "cpu_model_name");
-	cJSON_AddTrueToObject(collection, "cpu_idle");
-	cJSON_AddTrueToObject(collection, "cpu_nice");
-	cJSON_AddTrueToObject(collection, "cpu_user");
-	cJSON_AddTrueToObject(collection, "cpu_system");
-	cJSON_AddTrueToObject(collection, "cpu_speed");
-	cJSON_AddTrueToObject(collection, "cpu_num");
-	cJSON_AddTrueToObject(collection, "cpu_utilization");
-	cJSON_AddTrueToObject(collection, "load_one");
-	cJSON_AddTrueToObject(collection, "load_five");
-	cJSON_AddTrueToObject(collection, "load_fifteen");
-	cJSON_AddTrueToObject(collection, "disk_total");
-	cJSON_AddTrueToObject(collection, "disk_free");
-	cJSON_AddTrueToObject(collection, "disk_utilization");
-	cJSON_AddTrueToObject(collection, "mem_total");
-	cJSON_AddTrueToObject(collection, "mem_free");
-	cJSON_AddTrueToObject(collection, "mem_buffers");
-	cJSON_AddTrueToObject(collection, "mem_cached");
-	cJSON_AddTrueToObject(collection, "mem_utilization");
-	cJSON_AddTrueToObject(collection, "swap_free");
-	cJSON_AddTrueToObject(collection, "swap_total");
-	cJSON_AddTrueToObject(collection, "swap_utilization");
-	cJSON_AddTrueToObject(collection, "packages_out");
-	cJSON_AddTrueToObject(collection, "packages_in");
-	cJSON_AddTrueToObject(collection, "bytes_out");
-	cJSON_AddTrueToObject(collection, "bytes_in");
-	cJSON_AddTrueToObject(collection, "machine_ip");
-	cJSON_AddTrueToObject(collection, "proc_total");
-	cJSON_AddNumberToObject(collection, "sleep_time", 10);
-
-	cJSON_AddItemToObject(root, "network", network = cJSON_CreateObject());
-	cJSON_AddTrueToObject(network, "send");
-	cJSON_AddTrueToObject(network, "recv");
-	cJSON_AddStringToObject(network, "solider_multicast_add", "224.0.0.19");
-	cJSON_AddStringToObject(network, "scale_out_multicast_add", "224.0.0.20");
-	cJSON_AddNumberToObject(network, "listening port", 10241);
-
-	cJSON_AddItemToObject(root, "solider", solider = cJSON_CreateObject());
-	cJSON_AddNumberToObject(solider, "port", 10240);
-
-	cJSON_AddItemToObject(root, "officer", officer = cJSON_CreateObject());
-	cJSON_AddStringToObject(officer, "officer_ips", " ");
-
-	cJSON_AddItemToObject(root, "cluster", cluster = cJSON_CreateObject());
-	cJSON_AddTrueToObject(cluster, "master");
-	cJSON_AddNumberToObject(cluster, "backup_officer_size", 3);
-
-
-	cJSON_AddItemToObject(root, "heartbeat", heartbeat = cJSON_CreateObject());
-	cJSON_AddNumberToObject(heartbeat, "sleep_time", 5);
-
-
-	conf_json = cJSON_Print(root);
-	cJSON_Delete(root);
-	return conf_json;
-}
 
 bool fetch_value(char *result_value, char *origin_str)
 {
     if (split(result_value, origin_str, ':', 1) == false)
     {
-        printf("split failed.\n");
-        return false;
+	printf("split failed.\n");
+	return false;
     }
     if(strip(result_value) == false)
     {
-        printf("strip string failed.\n");
-        return false;
+	printf("strip string failed.\n");
+	return false;
     }
     return true;
 }
@@ -165,50 +68,50 @@ bool fetch_vaules_from_file(char *result_values,  char *file_path, short key_num
     if (*file_path == '\0' || strlen(file_path) == 0 || file_path == NULL)
     {
 	printf("Empty file path.\n");
-        return false;
+	return false;
     }
     memset(line_content, 0, sizeof(line_content));
     va_start(arg_ptr, key_num);
     for (; key_index < key_num;key_index++)
     {
-        memcpy(key_array[key_index], va_arg(arg_ptr, char *), 32);
-        if (strlen(key_array[key_index]) == 0)
-        {
-            printf("Empty key.\n");
-            return false;
-        }
+	memcpy(key_array[key_index], va_arg(arg_ptr, char *), 32);
+	if (strlen(key_array[key_index]) == 0)
+	{
+	    printf("Empty key.\n");
+	    return false;
+	}
     }
     fstream = fopen(file_path, "r");
     if (fstream == NULL)
     {
-        perror("open file failed\t");
-        fclose(fstream);
-        return false;
+	perror("open file failed\t");
+	fclose(fstream);
+	return false;
     }
     while(fgets(line_content, read_char_num, fstream) != NULL)
     {
-        for (key_index = 0; key_index < key_num; key_index++)
-        {
-            if (strncasecmp(line_content, key_array[key_index], strlen(key_array[key_index])) == 0)
-            {
-                result_value_buf = (char *)calloc(1024, sizeof(char));
-                if(fetch_value(result_value_buf, line_content) == false)
-                {
-                    printf("fetch value failed.\n");
-                    free(result_value_buf);
-                    result_value_buf = NULL;
+	for (key_index = 0; key_index < key_num; key_index++)
+	{
+	    if (strncasecmp(line_content, key_array[key_index], strlen(key_array[key_index])) == 0)
+	    {
+		result_value_buf = (char *)calloc(1024, sizeof(char));
+		if(fetch_value(result_value_buf, line_content) == false)
+		{
+		    printf("fetch value failed.\n");
+		    free(result_value_buf);
+		    result_value_buf = NULL;
 		    fclose(fstream);
-                    return false;
-                }
-                else
-                {
-                    strcat(result_value_buf, ":");
-                    strcat(result_values, result_value_buf);
-                    free(result_value_buf);
-                    result_value_buf = NULL;
-                }
-            }
-        }
+		    return false;
+		}
+		else
+		{
+		    strcat(result_value_buf, ":");
+		    strcat(result_values, result_value_buf);
+		    free(result_value_buf);
+		    result_value_buf = NULL;
+		}
+	    }
+	}
 	memset(line_content, 0, sizeof(line_content));
     }
     fclose(fstream);
@@ -231,7 +134,7 @@ char *collect_sys_info(void)
 		printf("init conf error.\n");
 		exit(0);
 	}
-	if((conf_fd = fopen("/tmp/cCollection.conf.json", "r")) == NULL)
+	if((conf_fd = fopen("/tmp/cMonitor/cCollection.conf.json", "r")) == NULL)
 	{
 		perror("open conf file.");
 		fclose(conf_fd);

@@ -30,7 +30,7 @@ void mulcast_dg(char *json_data)
 	int conf_file_size = 0;
 
 
-	if((conf_fd = fopen("/tmp/cCollection.conf.json", "r")) == NULL)
+	if((conf_fd = fopen("/tmp/cMonitor/cCollection.conf.json", "r")) == NULL)
 	{
 		perror("open conf file.");
 		fclose(conf_fd);
@@ -61,6 +61,8 @@ void mulcast_dg(char *json_data)
 		cJSON_Delete(conf_root);
 		exit(-1);
 	}
+	int opt=1;
+	setsockopt(mcast_socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 	memset(&mcast_addr, 0, sizeof(mcast_addr));
 	mcast_addr.sin_family = AF_INET;
 	mcast_addr.sin_addr.s_addr = inet_addr(cJSON_GetObjectItem(conf_node, "solider_multicast_add")->valuestring);
@@ -99,6 +101,8 @@ void machine_scale_out(void)
 	machine_ip = NULL;
 }
 
+
+
 void mulcast_scaleout_dg(char *data)
 {
 	struct sockaddr_in mcast_addr;
@@ -110,6 +114,8 @@ void mulcast_scaleout_dg(char *data)
 		perror("mcast socket()");
 		exit(-1);
 	}
+	int opt=1;
+	setsockopt(mcast_socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 	memset(&mcast_addr, 0, sizeof(mcast_addr));
 	mcast_addr.sin_family = AF_INET;
 	char solider_mul_addr[20];
@@ -131,120 +137,6 @@ void mulcast_scaleout_dg(char *data)
 	close(mcast_socket);
 }
 
-char *fetch_key_key_value_str(char *first_key, char *second_key)
-{
-	char *conf_json = NULL;
-	cJSON *conf_root = NULL;
-	cJSON *conf_node = NULL;
-	char *value_buf;
-	FILE *conf_fd = NULL;
-	int conf_file_size = 0;
-
-	if((conf_fd = fopen("/tmp/cCollection.conf.json", "r")) == NULL)
-	{
-		perror("open conf file.");
-		fclose(conf_fd);
-		exit(0);
-	}
-	fseek(conf_fd, 0, SEEK_END);
-	conf_file_size = ftell(conf_fd);
-	fseek(conf_fd, 0, SEEK_SET);
-	conf_json = (char *)calloc(conf_file_size + 1, sizeof(char));
-	if (conf_json == NULL)
-	{
-		perror("calloc memory.");
-		fclose(conf_fd);
-		exit(0);
-	}
-	fread(conf_json, sizeof(char), conf_file_size, conf_fd);
-	fclose(conf_fd);
-
-	conf_root = cJSON_Parse(conf_json);
-	conf_node = cJSON_GetObjectItem(conf_root, first_key);
-	free(conf_json);
-	conf_json = NULL;
-	value_buf = (char *)calloc(128, sizeof(char));
-	memset(value_buf, '\0', 128);
-	memcpy(value_buf,cJSON_GetObjectItem(conf_node, second_key)->valuestring, strlen(cJSON_GetObjectItem(conf_node, second_key)->valuestring));
-	cJSON_Delete(conf_root);
-
-	return value_buf;
-}
-
-bool fetch_key_key_value_bool(char *first_key, char *second_key)
-{
-	char *conf_json = NULL;
-	cJSON *conf_root = NULL;
-	cJSON *conf_node = NULL;
-	bool value_buf;
-	FILE *conf_fd = NULL;
-	int conf_file_size = 0;
-
-
-	if((conf_fd = fopen("/tmp/cCollection.conf.json", "r")) == NULL)
-	{
-		perror("open conf file.");
-		exit(0);
-	}
-	fseek(conf_fd, 0, SEEK_END);
-	conf_file_size = ftell(conf_fd);
-	fseek(conf_fd, 0, SEEK_SET);
-	conf_json = (char *)calloc(conf_file_size + 1, sizeof(char));
-	if (conf_json == NULL)
-	{
-		perror("calloc memory.");
-		fclose(conf_fd);
-		exit(0);
-	}
-	fread(conf_json, sizeof(char), conf_file_size, conf_fd);
-	fclose(conf_fd);
-
-	conf_root = cJSON_Parse(conf_json);
-	conf_node = cJSON_GetObjectItem(conf_root, first_key);
-	free(conf_json);
-	conf_json = NULL;
-	value_buf = cJSON_GetObjectItem(conf_node, second_key)->type;
-	cJSON_Delete(conf_root);
-	return value_buf;
-}
-
-int fetch_key_key_value_int(char *first_key, char *second_key)
-{
-	char *conf_json = NULL;
-	cJSON *conf_root = NULL;
-	cJSON *conf_node = NULL;
-	int value_buf;
-	FILE *conf_fd = NULL;
-	int conf_file_size = 0;
-
-
-	if((conf_fd = fopen("/tmp/cCollection.conf.json", "r")) == NULL)
-	{
-		perror("open conf file.");
-		fclose(conf_fd);
-		exit(0);
-	}
-	fseek(conf_fd, 0, SEEK_END);
-	conf_file_size = ftell(conf_fd);
-	fseek(conf_fd, 0, SEEK_SET);
-	conf_json = (char *)calloc(conf_file_size + 1, sizeof(char));
-	if (conf_json == NULL)
-	{
-		perror("calloc memory.");
-		fclose(conf_fd);
-		exit(0);
-	}
-	fread(conf_json, sizeof(char), conf_file_size, conf_fd);
-	fclose(conf_fd);
-
-	conf_root = cJSON_Parse(conf_json);
-	conf_node = cJSON_GetObjectItem(conf_root, first_key);
-	free(conf_json);
-	conf_json = NULL;
-	value_buf = cJSON_GetObjectItem(conf_node, second_key)->valueint;
-	cJSON_Delete(conf_root);
-	return value_buf;
-}
 
 void activate_solider_merge(void)
 {
@@ -253,14 +145,14 @@ void activate_solider_merge(void)
 	char buf[MAX_BUF_SIZE];
 	dict *dg_dict = NULL;
 	dict *cluster_rt_dict = NULL;
-	char type[32];
 
 	if((mul_socket = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
 	{
 		perror("socket");
 		exit(0);
 	}
-	memset(type, 0, sizeof(type));
+	int opt=1;
+	setsockopt(mul_socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 	memset(&local_address, 0, sizeof(local_address));
 	local_address.sin_family = AF_INET;
 	local_address.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -296,7 +188,6 @@ void activate_solider_merge(void)
 	cluster_rt_dict = create_dic();
 	while(true)
 	{
-		memset(type, 0, sizeof(type));
 		dg_dict = create_dic();
 		socklen_t address_len = sizeof(local_address);
 		memset(buf, 0, MAX_BUF_SIZE);
@@ -315,24 +206,19 @@ void activate_solider_merge(void)
 			printf("parse datagram error.\n");
 			continue;
 		}
-
-		fetch_dict_value(dg_dict, "type", STRINGTYPE, type);
-		char datagram[MAX_BUF_SIZE];
-		memset(datagram, 0, sizeof(datagram));
-		fetch_dict_value(dg_dict, "datagram", STRINGTYPE, datagram);
-		char mmh[16];
-		memset(mmh, 0, sizeof(mmh));
-		fetch_dict_value(dg_dict, "mmh", STRINGTYPE, mmh);
-//		char *mmh_hash = murmurhash_str(datagram);
-//		if (strcmp(mmh_hash, mmh) != 0)
-//		{
-
-//			printf("datagram loss.\n");
-//			release_dict(dg_dict);
-//			dg_dict = NULL;
-//			continue;
-//		}
-		switch (atoi(type)) {
+		char *datagram= NULL;
+		datagram = fetch_dictEntry(dg_dict, "datagram")->value.string_value;
+		char *mmh_hash = murmurhash_str(datagram);
+		if (strcmp(mmh_hash, fetch_dictEntry(dg_dict, "mmh")->value.string_value) != 0)
+		{
+			printf("datagram loss.\n");
+			free(mmh_hash);
+			mmh_hash = NULL;
+			release_dict(dg_dict);
+			dg_dict = NULL;
+			continue;
+		}
+		switch (atoi(fetch_dictEntry(dg_dict, "type")->value.string_value)) {
 		case RT_HOST:
 		{
 			merge_solider_rtdg(cluster_rt_dict, dg_dict, buf);
@@ -346,6 +232,8 @@ void activate_solider_merge(void)
 		default:
 			break;
 		}
+		free(mmh_hash);
+		mmh_hash = NULL;
 		release_dict(dg_dict);
 		//sleep(fetch_key_key_value_int("collection", "sleep_time"));
 	}
@@ -593,9 +481,8 @@ bool mul_parse_datagram(char *datagram, dict *dg_dict)
 
 bool merge_solider_rtdg(dict *cluster_rt_dict, dict *rt_dg_dict, char *buf)
 {
-	char uuid[16];
-	memset(uuid, 0, sizeof(uuid));
-	fetch_dict_value(rt_dg_dict, "uuid", STRINGTYPE, uuid);
+	char *uuid = NULL;
+	uuid = fetch_dictEntry(rt_dg_dict, "uuid")->value.string_value;
 	if (exist_key(cluster_rt_dict, uuid) == false)
 	{
 		add_dict(cluster_rt_dict, uuid, STRINGTYPE, buf);
@@ -607,7 +494,6 @@ bool merge_solider_rtdg(dict *cluster_rt_dict, dict *rt_dg_dict, char *buf)
 		char *sys_info_string = NULL;
 		int key_index = 0;
 		dictEntry *head = NULL;
-
 
 		cluster_rt_root = cJSON_CreateObject();
 		for (key_index = 0; key_index < cluster_rt_dict->hash_table[0].size; key_index++)
@@ -661,10 +547,10 @@ bool save_rr_dg(cJSON *cluster_rt_root)
 	cJSON *cluster_rr_dg_root;
 	FILE *cluster_rr_fd = NULL;
 	int file_size;
-	if (access("/tmp/rt_datagram.json", F_OK) != -1)
+	if (access("/tmp/cMonitor/rt_datagram.json", F_OK) != -1)
 	{
 		FILE *rt_dg_fd;
-		if ((rt_dg_fd = fopen("/tmp/rt_datagram.json", "w")) == NULL)
+		if ((rt_dg_fd = fopen("/tmp/cMonitor/rt_datagram.json", "w")) == NULL)
 		{
 			perror("open rt datagram file.");
 			cJSON_Delete(cluster_rt_root);
@@ -672,14 +558,14 @@ bool save_rr_dg(cJSON *cluster_rt_root)
 		}
 		char *rt_dg_buf = cJSON_Print(cluster_rt_root);
 		fputs(rt_dg_buf, rt_dg_fd);
-		fclose(rt_dg_fd);	
+		fclose(rt_dg_fd);
 		free(rt_dg_buf);
 		save_rt_dg_to_all(cluster_rt_root);
 	}
 	else
 	{
 		FILE *rt_dg_fd;
-		if ((rt_dg_fd = fopen("/tmp/rt_datagram.json", "a+")) == NULL)
+		if ((rt_dg_fd = fopen("/tmp/cMonitor/rt_datagram.json", "a+")) == NULL)
 		{
 			perror("open rt datagram file.");
 			cJSON_Delete(cluster_rt_root);
@@ -692,9 +578,9 @@ bool save_rr_dg(cJSON *cluster_rt_root)
 		save_rt_dg_to_all(cluster_rt_root);
 	}
 
-	if (access("/home/cf/conf/hour_datagram.json", F_OK) != -1)
+	if (access("/tmp/cMonitor/hour_datagram.json", F_OK) != -1)
 	{
-		if((cluster_rr_fd = fopen("/home/cf/conf/hour_datagram.json", "r")) == NULL)
+		if((cluster_rr_fd = fopen("/tmp/cMonitor/hour_datagram.json", "r")) == NULL)
 		{
 			perror("open rr datagram file.");
 			fclose(cluster_rr_fd);
@@ -730,7 +616,7 @@ bool save_rr_dg(cJSON *cluster_rt_root)
 			cJSON_DeleteItemFromObject(cluster_rr_dg_root, cluster_rr_dg_root->child->string);
 		}
 		cJSON_AddItemToObject(cluster_rr_dg_root,time_str, cluster_rt_root);
-		if ((cluster_rr_fd = fopen("/home/cf/conf/hour_datagram.json", "w")) == NULL)
+		if ((cluster_rr_fd = fopen("/tmp/cMonitor/hour_datagram.json", "w")) == NULL)
 		{
 			perror("open rr datagram file.");
 			fclose(cluster_rr_fd);
@@ -759,7 +645,7 @@ bool save_rr_dg(cJSON *cluster_rt_root)
 		memset(time_str, 0, sizeof(time_str));
 		sprintf(time_str, "%ld", (long)time_now);
 		cJSON_AddItemToObject(cluster_rr_dg_root, time_str, cluster_rt_root);
-		if ((cluster_rr_fd = fopen("/home/cf/conf/hour_datagram.json", "a+")) == NULL)
+		if ((cluster_rr_fd = fopen("/tmp/cMonitor/hour_datagram.json", "a+")) == NULL)
 		{
 			perror("create rr datagram file.");
 			fclose(cluster_rr_fd);
@@ -792,7 +678,7 @@ void save_rt_dg_to_all(cJSON *rt_dg)
 	time_t time_now;
 	FILE *all_dg_fd;
 
-	if ((all_dg_fd = fopen("/tmp/all_datagram.data", "a+")) == NULL)
+	if ((all_dg_fd = fopen("/tmp/cMonitor/all_datagram.data", "a+")) == NULL)
 	{
 		perror("create all datagram file.");
 		exit(0);
@@ -855,6 +741,8 @@ int mul_test(void)
 		perror("socket");
 		return -1;
 	}
+	int opt=1;
+	setsockopt(mul_socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 	memset(&local_address, 0, sizeof(local_address));
 	local_address.sin_family = AF_INET;
 	local_address.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -913,6 +801,8 @@ void activate_solider_scaleout(void)
 		perror("socket");
 		exit(0);
 	}
+	int opt=1;
+	setsockopt(mul_socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 	memset(&local_address, 0, sizeof(local_address));
 	local_address.sin_family = AF_INET;
 	local_address.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -955,7 +845,6 @@ void activate_solider_scaleout(void)
 		{
 			perror("recvfrom");
 		}
-
 		char type[8], uuid[16], machine_ip[16];
 		memset(type, 0, sizeof(type));
 		memset(uuid, 0, sizeof(uuid));
@@ -972,6 +861,23 @@ void activate_solider_scaleout(void)
 				continue;
 			}
 		}
+		if (atoi(type) == SYNC_ALIVE_MACHINE)
+		{
+			if (sync_alive_machines(uuid, machine_ip) == false)
+			{
+				printf("add a new machine: %s to monitor failed.\n", machine_ip);
+				continue;
+			}
+		}
+		if (atoi(type) == SYNC_DEAD_MACHINE)
+		{
+			if (sync_dead_machines(uuid, machine_ip) == false)
+			{
+				printf("del a machine: %s to monitor failed.\n", machine_ip);
+				continue;
+			}
+		}
+
 	}
 	if(setsockopt(mul_socket, IPPROTO_IP, IP_DROP_MEMBERSHIP,&mrep, sizeof(mrep)) < 0)
 	{
@@ -1009,6 +915,64 @@ bool add_machine(char *uuid, char *machine_ip)
 	return true;
 }
 
+bool sync_alive_machines(char *uuid, char *machine_ip)
+{
+	char *dg_message;
+	dg_message = (char *)calloc(64, sizeof(char));
+
+	strcat(dg_message, "2055");
+	strcat(dg_message, "|");
+	strcat(dg_message, uuid);
+	strcat(dg_message, "|");
+	strcat(dg_message, machine_ip);
+	// unix sock send
+	char *recv = NULL;
+	recv = send_and_recv_to_us(dg_message);
+	if (atoi(recv) != SUCCESS)
+	{
+		printf("add machine:%s to unix sock server failed.\n", machine_ip);
+		free(recv);
+		recv = NULL;
+		free(dg_message);
+		dg_message = NULL;
+		return false;
+	}
+	free(recv);
+	recv = NULL;
+	free(dg_message);
+	dg_message = NULL;
+	return true;
+}
+
+bool sync_dead_machines(char *uuid, char *machine_ip)
+{
+	char *dg_message;
+	dg_message = (char *)calloc(64, sizeof(char));
+
+	strcat(dg_message, "2056");
+	strcat(dg_message, "|");
+	strcat(dg_message, uuid);
+	strcat(dg_message, "|");
+	strcat(dg_message, machine_ip);
+	// unix sock send
+	char *recv = NULL;
+	recv = send_and_recv_to_us(dg_message);
+	if (atoi(recv) != SUCCESS)
+	{
+		printf("add machine:%s to unix sock server failed.\n", machine_ip);
+		free(recv);
+		recv = NULL;
+		free(dg_message);
+		dg_message = NULL;
+		return false;
+	}
+	free(recv);
+	recv = NULL;
+	free(dg_message);
+	dg_message = NULL;
+	return true;
+}
+
 void activate_solider_listen(void)
 {
 	int listen_sock;
@@ -1016,6 +980,8 @@ void activate_solider_listen(void)
 
 
 	listen_sock = socket(AF_INET, SOCK_STREAM, 0);
+	int opt=1;
+	setsockopt(listen_sock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 	listen_addr.sin_family = AF_INET;
 	listen_addr.sin_port = htons(fetch_key_key_value_int("network", "listening port"));
 	listen_addr.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -1062,12 +1028,12 @@ void activate_solider_listen(void)
 	    {
 		    char *rt_dg_json = NULL;
 		    FILE *rt_dg_fd = NULL;
-		    if (access("/tmp/rt_datagram.json", R_OK) != 0)
+		    if (access("/tmp/cMonitor/rt_datagram.json", R_OK) != 0)
 		    {
 			    printf("No read permission.\n");
 			    exit(0);
 		    }
-		    if ((rt_dg_fd = fopen("/tmp/rt_datagram.json", "r")) == NULL)
+		    if ((rt_dg_fd = fopen("/tmp/cMonitor/rt_datagram.json", "r")) == NULL)
 		    {
 			    perror("open alive machine file.");
 			    exit(0);
@@ -1102,12 +1068,12 @@ char *fetch_rt_dg_from_file(void)
 	char *rt_dg_json = NULL;
 	FILE *rt_dg_fd = NULL;
 
-	if (access("/tmp/rt_datagram.json", R_OK) != 0)
+	if (access("/tmp/cMonitor/rt_datagram.json", R_OK) != 0)
 	{
 		printf("No read permission.\n");
 		return false;
 	}
-	if ((rt_dg_fd = fopen("/tmp/rt_datagram.json", "r")) == NULL)
+	if ((rt_dg_fd = fopen("/tmp/cMonitor/rt_datagram.json", "r")) == NULL)
 	{
 		perror("open alive machine file.");
 		return false;
@@ -1127,10 +1093,7 @@ char *fetch_rt_dg_from_file(void)
 	return rt_dg_json;
 }
 
-void activate_solider_heartbeat(void)
-{
 
-}
 
 void respond_hb(int client_sock, char *buf)
 {
@@ -1153,7 +1116,7 @@ char *listen_encap_datagram(int type, ...)
 	case RESOND_HEARTBEAT:
 	{
 		char *dg_message;
-		dg_message = (char *)calloc(16, sizeof(char));
+		dg_message = (char *)calloc(32, sizeof(char));
 		char *uuid = collect_machine_uuid();
 		strcat(dg_message, uuid);
 		free(uuid);
@@ -1163,9 +1126,6 @@ char *listen_encap_datagram(int type, ...)
 		return dg_message;
 	}
 		break;
-
-
-
 	default:
 		break;
 	}
