@@ -169,7 +169,7 @@ char *collect_sys_info(void)
 
 	cJSON_Delete(conf_root);
 	sys_info_json = convert_to_json(collection_dict);
-	//printf("json:%s\nsize:%d\n", sys_info_json, strlen(sys_info_json) *sizeof(char));
+	printf("json:%s\nsize:%d\n", sys_info_json, strlen(sys_info_json) *sizeof(char));
 	if (release_dict(collection_dict) == false)
 	{
 		printf("release dict error.\n");
@@ -1067,9 +1067,15 @@ bool collect_custom_data(cJSON *conf_root, dict *collection_dict)
 		command_value = (char *) calloc(64, sizeof(char));
 		fgets(command_value, 64, fd);
 		fclose(fd);
+		strip(command_value);
 		if(add_dict(collection_dict, key, 2, command_value) == false)
 		{
 			printf("dict add error.\n");
+			return false;
+		}
+		if (remove("command.data") != 0)
+		{
+			perror("remove file.");
 			return false;
 		}
 		free(command_str);

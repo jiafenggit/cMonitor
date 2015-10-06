@@ -555,7 +555,11 @@ bool save_rr_dg(cJSON *cluster_rt_root)
 		fputs(rt_dg_buf, rt_dg_fd);
 		fclose(rt_dg_fd);
 		free(rt_dg_buf);
-		save_rt_dg_to_all(cluster_rt_root);
+		if (fetch_key_key_value_bool("cluster", "save_all_data") == true)
+		{
+			save_rt_dg_to_all(cluster_rt_root);
+		}
+
 	}
 	else
 	{
@@ -570,7 +574,10 @@ bool save_rr_dg(cJSON *cluster_rt_root)
 		fputs(rt_dg_buf, rt_dg_fd);
 		fclose(rt_dg_fd);
 		free(rt_dg_buf);
-		save_rt_dg_to_all(cluster_rt_root);
+		if (fetch_key_key_value_bool("cluster", "save_all_data") == true)
+		{
+			save_rt_dg_to_all(cluster_rt_root);
+		}
 	}
 
 	if (access("/tmp/cMonitor/hour_datagram.json", F_OK) != -1)

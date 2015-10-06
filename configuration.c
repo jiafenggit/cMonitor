@@ -79,8 +79,9 @@ char *create_conf_json(void)
 	cJSON_AddNumberToObject(network, "listening port", 10241);
 
 	cJSON_AddItemToObject(root, "cluster", cluster = cJSON_CreateObject());
-	cJSON_AddTrueToObject(cluster, "master");
+	cJSON_AddFalseToObject(cluster, "master");
 	cJSON_AddNumberToObject(cluster, "backup_officer_size", 3);
+	cJSON_AddFalseToObject(cluster, "save_all_data");
 
 
 	cJSON_AddItemToObject(root, "heartbeat", heartbeat = cJSON_CreateObject());
@@ -89,7 +90,9 @@ char *create_conf_json(void)
 	cJSON_AddNumberToObject(heartbeat, "sleep_time", 5);
 
 	cJSON_AddItemToObject(root, "custom", custom = cJSON_CreateObject());
-	cJSON_AddFalseToObject(custom, "enable");
+	//cJSON_AddFalseToObject(custom, "enable");
+	cJSON_AddTrueToObject(custom, "enable");
+	cJSON_AddStringToObject(custom, "init", "pmap 1 | grep total| grep \".*\" | grep -oP \"\\d+(?=K)\"");
 
 
 	conf_json = cJSON_Print(root);
