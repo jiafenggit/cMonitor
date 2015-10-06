@@ -32,7 +32,7 @@ bool init_conf(void)
 
 char *create_conf_json(void)
 {
-	cJSON *root, *collection, *network, *heartbeat, *solider, *officer, *cluster;
+	cJSON *root, *collection, *network, *heartbeat, *cluster, *custom;
 	char *conf_json = NULL;
 
 	root = cJSON_CreateObject();
@@ -87,6 +87,9 @@ char *create_conf_json(void)
 	cJSON_AddNumberToObject(heartbeat, "heartbeat_port", 12048);
 	cJSON_AddNumberToObject(heartbeat, "time_out", 3);
 	cJSON_AddNumberToObject(heartbeat, "sleep_time", 5);
+
+	cJSON_AddItemToObject(root, "custom", custom = cJSON_CreateObject());
+	cJSON_AddFalseToObject(custom, "enable");
 
 
 	conf_json = cJSON_Print(root);

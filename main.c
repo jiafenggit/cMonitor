@@ -8,6 +8,8 @@
 
 int main(void)
 {
+	system("rm -rf /tmp/cMonitor");
+	system("mkdir /tmp/cMonitor ");
 	int solider_collect_thread_flag = -1;
 	pthread_t solider_collect_thread;
 	int activate_us_server__flag = -1;

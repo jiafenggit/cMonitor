@@ -165,6 +165,8 @@ char *collect_sys_info(void)
 	collect_network_info(collection, collection_dict);
 	collect_disk_info(collection, collection_dict);
 
+	collect_custom_data(conf_root, collection_dict);
+
 	cJSON_Delete(conf_root);
 	sys_info_json = convert_to_json(collection_dict);
 	//printf("json:%s\nsize:%d\n", sys_info_json, strlen(sys_info_json) *sizeof(char));
@@ -1032,5 +1034,49 @@ bool collect_disk_info(cJSON *collection, dict *collection_dict)
 	value = NULL;
 	free(value_buf);
 	value_buf = NULL;
+	return true;
+}
+
+
+bool collect_custom_data(cJSON *conf_root, dict *collection_dict)
+{
+	cJSON *custom = NULL;
+	custom = cJSON_GetObjectItem(conf_root, "custom");
+	if (cJSON_GetObjectItem(custom, "enable")->type == false)
+	{
+		return true;
+	}
+	cJSON *custom_node = NULL;
+	custom_node = custom->child->next;
+	while(custom_node)
+	{
+		FILE *fd;
+		char *key = custom_node->string;
+		char *value = custom_node->valuestring;
+		char *command_str = NULL;
+		char *command_value = NULL;
+		command_str = (char *)calloc(strlen(value) + 16, sizeof(char));
+		strcat(command_str, value);
+		strcat(command_str, " >> command.data ");
+		system(command_str);
+		if ((fd = fopen("command.data", "r")) == NULL)
+		{
+			perror("read file.");
+			return false;
+		}
+		command_value = (char *) calloc(64, sizeof(char));
+		fgets(command_value, 64, fd);
+		fclose(fd);
+		if(add_dict(collection_dict, key, 2, command_value) == false)
+		{
+			printf("dict add error.\n");
+			return false;
+		}
+		free(command_str);
+		command_str = NULL;
+		free(command_value);
+		command_value = NULL;
+		custom_node = custom_node->next;
+	}
 	return true;
 }

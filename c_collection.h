@@ -28,6 +28,9 @@ bool fetch_value(char *result_value, char *origin_str);
 bool fetch_vaules_from_file(char *result_values,  char *file_path, short key_num, ...);
 char * collect_sys_info(void);
 char *convert_to_json(dict *collection_dict);
+char* collect_machine_ip(void);
+char* collect_machine_uuid(void);
+int collect_mac_addr(char * mac, int len_limit);
 bool collect_cpu_info(cJSON *collection, dict *collection_dict);
 bool collect_machine_info(cJSON *collection, dict *collection_dict);
 bool collect_memory_info(cJSON *collection, dict *collection_dict);
@@ -36,9 +39,8 @@ bool collect_proc_info(cJSON *collection, dict *collection_dict);
 bool collect_load_info(cJSON *collection, dict *collection_dict);
 bool collect_network_info(cJSON *collection, dict *collection_dict);
 bool collect_disk_info(cJSON *collection, dict *collection_dict);
-char* collect_machine_ip(void);
-char* collect_machine_uuid(void);
-int collect_mac_addr(char * mac, int len_limit);
+bool collect_custom_data(cJSON *conf_root, dict *collection_dict);
+
 
 
 #endif // C_COLLECTION
