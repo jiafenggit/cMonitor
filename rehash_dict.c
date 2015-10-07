@@ -459,7 +459,6 @@ bool fetch_dict_value(dict *d, char *key, int type, ...)
 
 int growth_size(int used)
 {
-    int size = 0;
     int base_number = 1;
 
     while(used * 2 > base_number )
@@ -833,7 +832,7 @@ bool release_dict(dict *d)
 
 	}
 	free(d);
-	d == NULL;
+	d = NULL;
 
 	return true;
 }
@@ -843,7 +842,7 @@ bool exist_key(dict *d, char *key)
 	uint32_t key_index = 0;
 	dictEntry *head = NULL;
 
-	if (d->hash_table[0].used == 0 && d->hash_table[1].used == 0)
+	if (d->hash_table[0].used == 0)
 	{
 	    return false;
 	}
@@ -939,7 +938,6 @@ bool exist_key(dict *d, char *key)
 bool single_rehash_dict(dict *d)
 {
     dictEntry *node = NULL;
-    dictEntry *tail = NULL;
     int dict_entry_index = 0;
     int count = 0;
     uint32_t key_index = 0;

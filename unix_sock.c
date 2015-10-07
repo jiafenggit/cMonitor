@@ -265,7 +265,7 @@ bool add_machine_to_file(char *uuid, char *machine_ip)
 			return false;
 		}
 		alive_machine_json = cJSON_Print(root);
-		fputs(alive_machine_json, alive_machine_fd);
+		fwrite(alive_machine_json, sizeof(char), strlen(alive_machine_json), alive_machine_fd);
 		fclose(alive_machine_fd);
 		free(alive_machine_json);
 		cJSON_Delete(root);

@@ -40,7 +40,6 @@ char *create_conf_json(void)
 	cJSON_AddTrueToObject(collection, "machine_type");
 	cJSON_AddTrueToObject(collection, "boot_time");
 	cJSON_AddTrueToObject(collection, "os_name");
-	cJSON_AddTrueToObject(collection, "host_ip");
 	cJSON_AddTrueToObject(collection, "cpu_model_name");
 	cJSON_AddTrueToObject(collection, "cpu_idle");
 	cJSON_AddTrueToObject(collection, "cpu_nice");

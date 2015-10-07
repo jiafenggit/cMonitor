@@ -1026,35 +1026,131 @@ void activate_solider_listen(void)
 		    respond_hb(client_sock, buf);
 	    }
 		    break;
-	    case FETCH_RT_DG:
+	    case REQUEST_RT_DG:
 	    {
 		    char *rt_dg_json = NULL;
 		    FILE *rt_dg_fd = NULL;
 		    if (access("/tmp/cMonitor/rt_datagram.json", R_OK) != 0)
 		    {
-			    printf("No read permission.\n");
+			    printf("No read permission.rt_datagram.json\n");
 			    exit(0);
 		    }
 		    if ((rt_dg_fd = fopen("/tmp/cMonitor/rt_datagram.json", "r")) == NULL)
 		    {
-			    perror("open alive machine file.");
+			    perror("open rt_datagram machine file.");
 			    exit(0);
 		    }
 		    fseek(rt_dg_fd, 0, SEEK_SET);
-		    rt_dg_json = (char *)calloc(1024, sizeof(char));
+		    rt_dg_json = (char *)calloc(8192, sizeof(char));
 		    if (rt_dg_json == NULL)
 		    {
 			    perror("calloc memory.");
 			    fclose(rt_dg_fd);
 			    exit(0);
 		    }
-		    while(fread(rt_dg_json, sizeof(char), 1024, rt_dg_fd))
+		    while(fread(rt_dg_json, sizeof(char), 8192, rt_dg_fd))
 		    {
-			    printf("respond a FETCH_RT_DG request\n");
+			    printf("respond a REQUEST_RT_DG request\n");
 			    send(client_sock, rt_dg_json, strlen(rt_dg_json), 0);
-			    memset(rt_dg_json, 0, 1024);
+			    memset(rt_dg_json, 0, 8192);
 		    }
+		    free(rt_dg_json);
+		    rt_dg_json = NULL;
 		    fclose(rt_dg_fd);
+	    }
+		    break;
+	    case REQUEST_DATAGRAM_NAME:
+	    {
+		    char *conf_json = NULL;
+		    cJSON *conf_root = NULL;
+		    cJSON *conf_node = NULL;
+		    cJSON *dg_name_root = NULL;
+		    char *dg_name_json = NULL;
+		    FILE *conf_fd = NULL;
+		    int conf_file_size = 0;
+
+		    if((conf_fd = fopen("/tmp/cMonitor/cCollection.conf.json", "r")) == NULL)
+		    {
+			    perror("open conf file.cCollection.conf.json");
+			    fclose(conf_fd);
+			    exit(0);
+		    }
+		    fseek(conf_fd, 0, SEEK_END);
+		    conf_file_size = ftell(conf_fd);
+		    fseek(conf_fd, 0, SEEK_SET);
+		    conf_json = (char *)calloc(conf_file_size + 1, sizeof(char));
+		    if (conf_json == NULL)
+		    {
+			    perror("calloc memory.");
+			    fclose(conf_fd);
+			    exit(0);
+		    }
+		    fread(conf_json, sizeof(char), conf_file_size, conf_fd);
+		    fclose(conf_fd);
+
+		    conf_root = cJSON_Parse(conf_json);
+		    conf_node = cJSON_GetObjectItem(conf_root, "collection")->child;
+		    dg_name_root = cJSON_CreateObject();
+		    while(conf_node)
+		    {
+			    if (conf_node->type == true)
+			    {
+				    cJSON_AddTrueToObject(dg_name_root, conf_node->string);
+			    }
+			    conf_node = conf_node->next;
+		    }
+		    conf_node = cJSON_GetObjectItem(conf_root, "custom");
+		    if (conf_node->child->type == true)
+		    {
+			    conf_node = conf_node->child->next;
+			    while(conf_node)
+			    {
+				    cJSON_AddTrueToObject(dg_name_root, conf_node->string);
+				    conf_node = conf_node->next;
+			    }
+		    }
+		    dg_name_json = cJSON_Print(dg_name_root);
+		    send(client_sock, dg_name_json, strlen(dg_name_json), 0);
+		    free(dg_name_json);
+		    dg_name_json = NULL;
+		    free(conf_json);
+		    conf_json = NULL;
+		    conf_node = NULL;
+		    cJSON_Delete(conf_root);
+		    cJSON_Delete(dg_name_root);
+	    }
+		    break;
+	    case REQUEST_ALIVE_MACHINES:
+	    {
+		    char *alive_machines_json = NULL;
+		    FILE *alive_machines_fd = NULL;
+		    if (access("/tmp/cMonitor/alive_machine.json", R_OK) != 0)
+		    {
+			    printf("No read permission.alive_machine.json\n");
+			    exit(0);
+		    }
+		    if ((alive_machines_fd = fopen("/tmp/cMonitor/alive_machine.json", "r")) == NULL)
+		    {
+			    perror("open alive machine file.alive_machine.json");
+			    exit(0);
+		    }
+		    fseek(alive_machines_fd, 0, SEEK_SET);
+		    alive_machines_json = (char *)calloc(8192, sizeof(char));
+		    if (alive_machines_json == NULL)
+		    {
+			    perror("calloc memory.");
+			    fclose(alive_machines_fd);
+			    exit(0);
+		    }
+		    while(fread(alive_machines_json, sizeof(char), 8192, alive_machines_fd))
+		    {
+			    printf("respond a REQUEST_ALIVE_MACHINES request\n");
+			    send(client_sock, alive_machines_json, strlen(alive_machines_json), 0);
+			    memset(alive_machines_json, 0, 8192);
+		    }
+		    free(alive_machines_json);
+		    alive_machines_json = NULL;
+		    fclose(alive_machines_fd);
 	    }
 		    break;
 	    default:

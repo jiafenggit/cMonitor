@@ -59,7 +59,7 @@ bool release_dict(dict *d);
 bool single_rehash_dict(dict *d);
 bool exist_key(dict *d, char *key);
 dictEntry *fetch_dictEntry(dict *d, char *key);
-
+int growth_size(int used);
 
 
 

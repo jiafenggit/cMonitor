@@ -7,6 +7,11 @@ void activate_solider_heartbeat(void)
 	{
 		char *target_ip = NULL;
 		target_ip = fetch_target_ip();
+		if (target_ip == NULL || strlen(target_ip) == 0)
+		{
+			printf("target ip is null.\n");
+			continue;
+		}
 		if (heartbeat_check(target_ip) == false)
 		{
 			printf("machine:%s drop.\n", target_ip);
@@ -29,7 +34,7 @@ void activate_solider_heartbeat(void)
 			uuid = NULL;
 			continue;
 		}
-		printf("target ip:%s\n", fetch_target_ip());
+		printf("check target ip:%s success\n", fetch_target_ip());
 		sleep(fetch_key_key_value_int("heartbeat", "sleep_time"));
 
 		free(target_ip);
@@ -57,6 +62,11 @@ char *fetch_target_ip(void)
 	fseek(alive_machine_fd, 0, SEEK_END);
 	alive_machine_file_size = ftell(alive_machine_fd);
 	fseek(alive_machine_fd, 0, SEEK_SET);
+	if (alive_machine_file_size == -1)
+	{
+		fclose(alive_machine_fd);
+		return NULL;
+	}
 	alive_machine_json = (char *)calloc(alive_machine_file_size + 1, sizeof(char));
 	if (alive_machine_json == NULL)
 	{
@@ -67,6 +77,12 @@ char *fetch_target_ip(void)
 	fread(alive_machine_json, sizeof(char), alive_machine_file_size, alive_machine_fd);
 	fclose(alive_machine_fd);
 
+	if (strlen(alive_machine_json) == 0)
+	{
+		free(alive_machine_json);
+		alive_machine_json = NULL;
+		return NULL;
+	}
 	alive_machine_root = cJSON_Parse(alive_machine_json);
 	alive_machine_node = alive_machine_root->child;
 	while(alive_machine_node)
@@ -108,6 +124,11 @@ char *fetch_target_uuid(char *target_ip)
 	fseek(alive_machine_fd, 0, SEEK_END);
 	alive_machine_file_size = ftell(alive_machine_fd);
 	fseek(alive_machine_fd, 0, SEEK_SET);
+	if (alive_machine_file_size == -1)
+	{
+		fclose(alive_machine_fd);
+		return NULL;
+	}
 	alive_machine_json = (char *)calloc(alive_machine_file_size + 1, sizeof(char));
 	if (alive_machine_json == NULL)
 	{
@@ -118,6 +139,12 @@ char *fetch_target_uuid(char *target_ip)
 	fread(alive_machine_json, sizeof(char), alive_machine_file_size, alive_machine_fd);
 	fclose(alive_machine_fd);
 
+	if (strlen(alive_machine_json) == 0)
+	{
+		free(alive_machine_json);
+		alive_machine_json = NULL;
+		return NULL;
+	}
 	alive_machine_root = cJSON_Parse(alive_machine_json);
 	free(alive_machine_json);
 	alive_machine_json = NULL;

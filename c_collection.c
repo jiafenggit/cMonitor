@@ -169,7 +169,7 @@ char *collect_sys_info(void)
 
 	cJSON_Delete(conf_root);
 	sys_info_json = convert_to_json(collection_dict);
-	printf("json:%s\nsize:%d\n", sys_info_json, strlen(sys_info_json) *sizeof(char));
+	printf("json:%s\nsize:%ld\n", sys_info_json, strlen(sys_info_json) *sizeof(char));
 	if (release_dict(collection_dict) == false)
 	{
 		printf("release dict error.\n");
