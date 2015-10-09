@@ -6,12 +6,19 @@ void activate_solider_collect(void)
 {
 	char *sys_info_dg = NULL;
 	char *sys_info_json = NULL;
-
+	printf("Activate solider collect services.\n");
 	while (true)
 	{
 		sys_info_json = collect_sys_info();
 		sys_info_dg = mul_encap_datagram(RT_HOST, sys_info_json);
-		mulcast_dg(sys_info_dg);
+		if (mulcast_dg(sys_info_dg) == false)
+		{
+			printf("Exec activate_solider_collect/mulcast_dg  function failed.\n");
+			free(sys_info_dg);
+			free(sys_info_json);
+			sys_info_json = NULL;
+			continue;
+		}
 		free(sys_info_dg);
 		free(sys_info_json);
 		sys_info_json = NULL;
@@ -19,7 +26,7 @@ void activate_solider_collect(void)
 	}
 }
 
-void mulcast_dg(char *json_data)
+bool mulcast_dg(char *json_data)
 {
 	struct sockaddr_in mcast_addr;
 	int mcast_socket;
@@ -32,9 +39,8 @@ void mulcast_dg(char *json_data)
 
 	if((conf_fd = fopen("/tmp/cMonitor/cCollection.conf.json", "r")) == NULL)
 	{
-		perror("open conf file.");
-		fclose(conf_fd);
-		exit(0);
+		perror("Exec mulcast_dg/fopen  function failed.");
+		return false;
 	}
 	fseek(conf_fd, 0, SEEK_END);
 	conf_file_size = ftell(conf_fd);
@@ -42,9 +48,9 @@ void mulcast_dg(char *json_data)
 	conf_json = (char *)calloc(conf_file_size + 1, sizeof(char));
 	if (conf_json == NULL)
 	{
-		perror("calloc memory.");
+		perror("Exec mulcast_dg/calloc  function failed.");
 		fclose(conf_fd);
-		exit(0);
+		return false;
 	}
 	fread(conf_json, sizeof(char), conf_file_size, conf_fd);
 	fclose(conf_fd);
@@ -57,9 +63,9 @@ void mulcast_dg(char *json_data)
 	mcast_socket = socket(AF_INET, SOCK_DGRAM, 0);
 	if (mcast_socket == -1)
 	{
-		perror("mcast socket()");
+		perror("Exec mulcast_dg/socket  function failed.");
 		cJSON_Delete(conf_root);
-		exit(-1);
+		return false;
 	}
 	int opt=1;
 	setsockopt(mcast_socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
@@ -71,20 +77,25 @@ void mulcast_dg(char *json_data)
 	int status = sendto(mcast_socket, json_data, strlen(json_data), 0, (struct sockaddr*)&mcast_addr, sizeof(mcast_addr));
 	if (status < 0)
 	{
-		perror("sendto()");
+		perror("Exec mulcast_dg/sendto  function failed.");
 		cJSON_Delete(conf_root);
-		exit(-1);
+		return false;
 	}
 	close(mcast_socket);
 	cJSON_Delete(conf_root);
+	return true;
 }
 
 void machine_scale_out(void)
 {
-
 	sleep(1);
-	char *dg_message;
+	char *dg_message = NULL;
 	dg_message = (char *)calloc(1024, sizeof(char));
+	if (dg_message == NULL)
+	{
+		perror("Exec machine_scale_out/calloc function failed\n");
+		exit(0);
+	}
 	strcat(dg_message, "2051");
 	strcat(dg_message, "|");
 	char *uuid = collect_machine_uuid();
@@ -92,7 +103,17 @@ void machine_scale_out(void)
 	strcat(dg_message, uuid);
 	strcat(dg_message, "|");
 	strcat(dg_message, machine_ip);
-	mulcast_scaleout_dg(dg_message);
+	if (mulcast_scaleout_dg(dg_message) == false)
+	{
+		printf("Exec mulcast_scaleout_dg/mulcast_scaleout_dg function failed.\n");
+		free(dg_message);
+		dg_message = NULL;
+		free(uuid);
+		uuid = NULL;
+		free(machine_ip);
+		machine_ip = NULL;
+		exit(0);
+	}
 	free(dg_message);
 	dg_message = NULL;
 	free(uuid);
@@ -103,7 +124,7 @@ void machine_scale_out(void)
 
 
 
-void mulcast_scaleout_dg(char *data)
+bool mulcast_scaleout_dg(char *data)
 {
 	struct sockaddr_in mcast_addr;
 	int mcast_socket;
@@ -111,8 +132,8 @@ void mulcast_scaleout_dg(char *data)
 	mcast_socket = socket(AF_INET, SOCK_DGRAM, 0);
 	if (mcast_socket == -1)
 	{
-		perror("mcast socket()");
-		exit(-1);
+		perror("Exec mulcast_scaleout_dg/mcast_socket function failed.");
+		return false;
 	}
 	int opt=1;
 	setsockopt(mcast_socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
@@ -120,6 +141,11 @@ void mulcast_scaleout_dg(char *data)
 	mcast_addr.sin_family = AF_INET;
 	char solider_mul_addr[20];
 	char *fetch_value_buf = fetch_key_key_value_str("network", "scale_out_multicast_add");
+	if (fetch_value_buf == NULL)
+	{
+		printf("Exec mulcast_scaleout_dg/fetch_key_key_value_str function failed.\n");
+		return false;
+	}
 	memset(solider_mul_addr, 0, sizeof(solider_mul_addr));
 	memcpy(solider_mul_addr, fetch_value_buf, 16);
 	free(fetch_value_buf);
@@ -127,14 +153,15 @@ void mulcast_scaleout_dg(char *data)
 
 	mcast_addr.sin_addr.s_addr = inet_addr(solider_mul_addr);
 	mcast_addr.sin_port = htons(SCALEOUT_MCAST_PORT);
-	printf("add local host to cluster.\n");
 	int status = sendto(mcast_socket, data, strlen(data), 0, (struct sockaddr*)&mcast_addr, sizeof(mcast_addr));
 	if (status < 0)
 	{
-		perror("sendto()");
-		exit(-1);
+		perror("Exec mulcast_scaleout_dg/sendto function failed.");
+		return false;
 	}
+	printf("Add local host to cluster mulcast.\n");
 	close(mcast_socket);
+	return true;
 }
 
 
@@ -148,7 +175,7 @@ void activate_solider_merge(void)
 
 	if((mul_socket = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
 	{
-		perror("socket");
+		perror("Exec activate_solider_merge/socket function failed");
 		exit(0);
 	}
 	int opt=1;
@@ -160,18 +187,23 @@ void activate_solider_merge(void)
 
 	if(bind(mul_socket, (struct sockaddr *)&local_address, sizeof(local_address)) < 0)
 	{
-		perror("bind");
+		perror("Exec activate_solider_merge/bind function failed");
 		exit(0);
 	}
 
 	int loop = 1;
 	if (setsockopt(mul_socket,IPPROTO_IP,IP_MULTICAST_LOOP,&loop, sizeof(loop)) < 0)
 	{
-		perror("IP_MULTICAST_LOOP");
+		perror("Exec activate_solider_merge/setsockopt IP_MULTICAST_LOOP function failed");
 		exit(0);
 	}
 	char solider_mul_addr[20];
 	char *fetch_value_buf = fetch_key_key_value_str("network", "solider_multicast_add");
+	if (fetch_value_buf == NULL)
+	{
+		printf("Exec activate_solider_merge/fetch_key_key_value_str function failed.\n");
+		exit(0);
+	}
 	memset(solider_mul_addr, 0, sizeof(solider_mul_addr));
 	memcpy(solider_mul_addr, fetch_value_buf, 16);
 	free(fetch_value_buf);
@@ -182,10 +214,11 @@ void activate_solider_merge(void)
 	//加入广播组
 	if (setsockopt(mul_socket,IPPROTO_IP,IP_ADD_MEMBERSHIP,&mrep, sizeof(mrep)) < 0)
 	{
-		perror("IP_ADD_MEMBERSHIP");
+		perror("Exec activate_solider_merge/setsockopt IP_ADD_MEMBERSHIP function failed");
 		exit(0);
 	}
 	cluster_rt_dict = create_dic();
+	printf("Activate solider merge services.\n");
 	while(true)
 	{
 		dg_dict = create_dic();
@@ -193,17 +226,17 @@ void activate_solider_merge(void)
 		memset(buf, 0, MAX_BUF_SIZE);
 		if(recvfrom(mul_socket, buf, MAX_BUF_SIZE, 0,(struct sockaddr *)&local_address, &address_len) < 0)
 		{
-			perror("recvfrom");
+			perror("Exec activate_solider_merge/recvfrom function failed");
 			if(setsockopt(mul_socket, IPPROTO_IP, IP_DROP_MEMBERSHIP,&mrep, sizeof(mrep)) < 0)
 			{
-				perror("setsockopt:IP_DROP_MEMBERSHIP");
+				perror("Exec activate_solider_merge/setsockopt IP_DROP_MEMBERSHIP function failed");
 			}
 			close(mul_socket);
-			exit(0);
+			continue;
 		}
 		if (mul_parse_datagram(buf, dg_dict) == false)
 		{
-			printf("parse datagram error.\n");
+			printf("Exec activate_solider_merge/mul_parse_datagram function failed.\n");
 			continue;
 		}
 		char *datagram= NULL;
@@ -211,7 +244,7 @@ void activate_solider_merge(void)
 		char *mmh_hash = murmurhash_str(datagram);
 		if (strcmp(mmh_hash, fetch_dictEntry(dg_dict, "mmh")->value.string_value) != 0)
 		{
-			printf("datagram loss.\n");
+			printf("Exec activate_solider_merge/fetch_dictEntry function failed.\n");
 			free(mmh_hash);
 			mmh_hash = NULL;
 			release_dict(dg_dict);
@@ -230,6 +263,7 @@ void activate_solider_merge(void)
 		free(mmh_hash);
 		mmh_hash = NULL;
 		release_dict(dg_dict);
+		printf("Recv data from mulcat & Merge data to File.\n");
 		//sleep(fetch_key_key_value_int("collection", "sleep_time"));
 	}
 }
@@ -557,7 +591,11 @@ bool save_rr_dg(cJSON *cluster_rt_root)
 		free(rt_dg_buf);
 		if (fetch_key_key_value_bool("cluster", "save_all_data") == true)
 		{
-			save_rt_dg_to_all(cluster_rt_root);
+			if (save_rt_dg_to_all(cluster_rt_root) == false)
+			{
+				printf("Exec /  function failed.\n");
+				return false;
+			}
 		}
 
 	}
@@ -576,7 +614,11 @@ bool save_rr_dg(cJSON *cluster_rt_root)
 		free(rt_dg_buf);
 		if (fetch_key_key_value_bool("cluster", "save_all_data") == true)
 		{
-			save_rt_dg_to_all(cluster_rt_root);
+			if (save_rt_dg_to_all(cluster_rt_root) == false)
+			{
+				printf("Exec /  function failed.\n");
+				return false;
+			}
 		}
 	}
 
@@ -669,7 +711,7 @@ bool save_rr_dg(cJSON *cluster_rt_root)
 	}
 }
 
-void save_rt_dg_to_all(cJSON *rt_dg)
+bool save_rt_dg_to_all(cJSON *rt_dg)
 {
 	char *cur_time;
 	char *cur_uuid;
@@ -683,7 +725,7 @@ void save_rt_dg_to_all(cJSON *rt_dg)
 	if ((all_dg_fd = fopen("/tmp/cMonitor/all_datagram.data", "a+")) == NULL)
 	{
 		perror("create all datagram file.");
-		exit(0);
+		return false;
 	}
 	time(&time_now);
 	cur_time = (char *)calloc(16, sizeof(char));
@@ -709,7 +751,7 @@ void save_rt_dg_to_all(cJSON *rt_dg)
 		if (strip(cur_line_buf) == false)
 		{
 			printf("strip cur line buf failed.\n");
-			exit(0);
+			return false;
 		}
 		strcat(cur_line_buf, "\n");
 		fputs(cur_line_buf, all_dg_fd);
@@ -730,6 +772,7 @@ void save_rt_dg_to_all(cJSON *rt_dg)
 	cur_uuid = NULL;
 	free(cur_machine_ip);
 	cur_machine_ip = NULL;
+	return true;
 }
 
 int mul_test(void)
@@ -800,7 +843,7 @@ void activate_solider_scaleout(void)
 
 	if((mul_socket = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
 	{
-		perror("socket");
+		perror("Exec activate_solider_scaleout/socket function failed.");
 		exit(0);
 	}
 	int opt=1;
@@ -812,19 +855,24 @@ void activate_solider_scaleout(void)
 
 	if(bind(mul_socket, (struct sockaddr *)&local_address, sizeof(local_address)) < 0)
 	{
-		perror("bind");
+		perror("Exec activate_solider_scaleout/bind function failed.");
 		exit(0);
 	}
 
 	int loop = 1;
 	if (setsockopt(mul_socket,IPPROTO_IP,IP_MULTICAST_LOOP,&loop, sizeof(loop)) < 0)
 	{
-		perror("IP_MULTICAST_LOOP");
+		perror("Exec activate_solider_scaleout/setsockopt IP_MULTICAST_LOOP function failed.");
 		exit(0);
 	}
 	struct ip_mreq mrep;
 	char solider_mul_addr[20];
 	char *fetch_value_buf = fetch_key_key_value_str("network", "scale_out_multicast_add");
+	if (fetch_value_buf == NULL)
+	{
+		printf("Exec activate_solider_scaleout/fetch_key_key_value_str function failed.\n");
+		exit(0);
+	}
 	memset(solider_mul_addr, 0, sizeof(solider_mul_addr));
 	memcpy(solider_mul_addr, fetch_value_buf, 16);
 	free(fetch_value_buf);
@@ -834,7 +882,7 @@ void activate_solider_scaleout(void)
 	//加入广播组
 	if (setsockopt(mul_socket,IPPROTO_IP,IP_ADD_MEMBERSHIP,&mrep, sizeof(mrep)) < 0)
 	{
-		perror("IP_ADD_MEMBERSHIP");
+		perror("Exec activate_solider_scaleout/setsockopt IP_ADD_MEMBERSHIP function failed.");
 		exit(0);
 	}
 
@@ -845,7 +893,8 @@ void activate_solider_scaleout(void)
 		socklen_t address_len = sizeof(local_address);
 		if(recvfrom(mul_socket, buf, 1024, 0,(struct sockaddr *)&local_address, &address_len) < 0)
 		{
-			perror("recvfrom");
+			perror("Exec activate_solider_scaleout/recvfrom function failed.");
+			continue;
 		}
 		char type[8], uuid[16], machine_ip[16];
 		memset(type, 0, sizeof(type));
@@ -854,12 +903,12 @@ void activate_solider_scaleout(void)
 		split(type, buf , '|', 0);
 		split(uuid, buf , '|', 1);
 		split(machine_ip, buf , '|', 2);
-		printf("add new machine: %s\n", machine_ip);
+		printf("Exec activate_solider_scaleout/add_machine(%s) function succeeded.\n", machine_ip);
 		if (atoi(type) == SCALEOUT_DG)
 		{
 			if (add_machine(uuid, machine_ip) == false)
 			{
-				printf("add a new machine: %s to monitor failed.\n", machine_ip);
+				printf("Exec activate_solider_scaleout/add_machine(%s) function failed.\n", machine_ip);
 				continue;
 			}
 		}
@@ -867,7 +916,7 @@ void activate_solider_scaleout(void)
 		{
 			if (sync_alive_machines(uuid, machine_ip) == false)
 			{
-				printf("add a new machine: %s to monitor failed.\n", machine_ip);
+				printf("Exec activate_solider_scaleout/sync_alive_machines(%s) function failed.\n", machine_ip);
 				continue;
 			}
 		}
@@ -875,7 +924,7 @@ void activate_solider_scaleout(void)
 		{
 			if (sync_dead_machines(uuid, machine_ip) == false)
 			{
-				printf("del a machine: %s to monitor failed.\n", machine_ip);
+				printf("Exec activate_solider_scaleout/sync_dead_machines(%s) function failed.\n", machine_ip);
 				continue;
 			}
 		}
@@ -883,7 +932,7 @@ void activate_solider_scaleout(void)
 	}
 	if(setsockopt(mul_socket, IPPROTO_IP, IP_DROP_MEMBERSHIP,&mrep, sizeof(mrep)) < 0)
 	{
-		perror("setsockopt:IP_DROP_MEMBERSHIP");
+		perror("Exec activate_solider_scaleout/setsockopt IP_DROP_MEMBERSHIP function failed.");
 	}
 	close(mul_socket);
 }
@@ -981,7 +1030,11 @@ void activate_solider_listen(void)
 	struct sockaddr_in listen_addr;
 
 
-	listen_sock = socket(AF_INET, SOCK_STREAM, 0);
+	if ((listen_sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+	{
+		perror("Exec activate_solider_listen/socket function failed.");
+		exit(0);
+	}
 	int opt=1;
 	setsockopt(listen_sock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 	listen_addr.sin_family = AF_INET;
@@ -989,16 +1042,16 @@ void activate_solider_listen(void)
 	listen_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 	if (bind(listen_sock, (struct sockaddr *)&listen_addr, sizeof(listen_addr)) == -1)
 	{
-	    perror("bind");
-	    exit(0);
+		perror("Exec activate_solider_listen/bind function failed.");
+		exit(0);
 	}
 	if (listen(listen_sock, 5) == -1)
 	{
-	    perror("listen");
-	    exit(0);
+		perror("Exec activate_solider_listen/listen function failed.");
+		exit(0);
 	}
 	char buf[DG_MAX_SIZE];
-
+	printf("Activate solider listen services.\n");
 	while(true)
 	{
 	    struct sockaddr_in client_addr;
@@ -1007,8 +1060,8 @@ void activate_solider_listen(void)
 	    int client_sock = accept(listen_sock, (struct sockaddr *)&client_addr, &len);
 	    if (client_sock < 0)
 	    {
-		    perror("accept.");
-		    exit(0);
+		    perror("Exec activate_solider_listen/accept function failed.");
+		    continue;
 	    }
 	    memset(buf, 0, sizeof(buf));
 	    recv(client_sock, buf, sizeof(buf), 0);
@@ -1016,14 +1069,18 @@ void activate_solider_listen(void)
 	    memset(type, 0, sizeof(type));
 	    if (split(type, buf, '|', 1) == false)
 	    {
-		    printf("split datagram error.'n");
+		    printf("Exec activate_solider_listen/split function failed.");
 		    close(client_sock);
 		    continue;
 	    }
 	    switch (atoi(type)) {
 	    case HEARTBEAT_DG:
 	    {
-		    respond_hb(client_sock, buf);
+		    if (respond_hb(client_sock) == false)
+		    {
+			    printf("Exec activate_solider_listen/respond_hb function failed.\n");
+			    break;
+		    }
 	    }
 		    break;
 	    case REQUEST_RT_DG:
@@ -1032,25 +1089,25 @@ void activate_solider_listen(void)
 		    FILE *rt_dg_fd = NULL;
 		    if (access("/tmp/cMonitor/rt_datagram.json", R_OK) != 0)
 		    {
-			    printf("No read permission.rt_datagram.json\n");
-			    exit(0);
+			    printf("Exec activate_solider_listen/access function failed.");
+			    break;
 		    }
 		    if ((rt_dg_fd = fopen("/tmp/cMonitor/rt_datagram.json", "r")) == NULL)
 		    {
-			    perror("open rt_datagram machine file.");
-			    exit(0);
+			    perror("Exec activate_solider_listen/fopen function failed.");
+			    break;
 		    }
 		    fseek(rt_dg_fd, 0, SEEK_SET);
 		    rt_dg_json = (char *)calloc(8192, sizeof(char));
 		    if (rt_dg_json == NULL)
 		    {
-			    perror("calloc memory.");
+			    perror("Exec activate_solider_listen/calloc function failed.");
 			    fclose(rt_dg_fd);
-			    exit(0);
+			    break;
 		    }
 		    while(fread(rt_dg_json, sizeof(char), 8192, rt_dg_fd))
 		    {
-			    printf("respond a REQUEST_RT_DG request\n");
+			    printf("Exec activate_solider_listen/fread function failed.\n");
 			    send(client_sock, rt_dg_json, strlen(rt_dg_json), 0);
 			    memset(rt_dg_json, 0, 8192);
 		    }
@@ -1071,9 +1128,8 @@ void activate_solider_listen(void)
 
 		    if((conf_fd = fopen("/tmp/cMonitor/cCollection.conf.json", "r")) == NULL)
 		    {
-			    perror("open conf file.cCollection.conf.json");
-			    fclose(conf_fd);
-			    exit(0);
+			    perror("Exec activate_solider_listen/fopen function failed.");
+			    break;
 		    }
 		    fseek(conf_fd, 0, SEEK_END);
 		    conf_file_size = ftell(conf_fd);
@@ -1081,9 +1137,8 @@ void activate_solider_listen(void)
 		    conf_json = (char *)calloc(conf_file_size + 1, sizeof(char));
 		    if (conf_json == NULL)
 		    {
-			    perror("calloc memory.");
-			    fclose(conf_fd);
-			    exit(0);
+			    perror("Exec activate_solider_listen/calloc function failed.");
+			    break;
 		    }
 		    fread(conf_json, sizeof(char), conf_file_size, conf_fd);
 		    fclose(conf_fd);
@@ -1126,25 +1181,25 @@ void activate_solider_listen(void)
 		    FILE *alive_machines_fd = NULL;
 		    if (access("/tmp/cMonitor/alive_machine.json", R_OK) != 0)
 		    {
-			    printf("No read permission.alive_machine.json\n");
-			    exit(0);
+			    printf("Exec activate_solider_listen/access function failed.\n");
+			    break;
 		    }
 		    if ((alive_machines_fd = fopen("/tmp/cMonitor/alive_machine.json", "r")) == NULL)
 		    {
-			    perror("open alive machine file.alive_machine.json");
-			    exit(0);
+			    perror("Exec activate_solider_listen/fopen function failed.");
+			    break;
 		    }
 		    fseek(alive_machines_fd, 0, SEEK_SET);
 		    alive_machines_json = (char *)calloc(8192, sizeof(char));
 		    if (alive_machines_json == NULL)
 		    {
-			    perror("calloc memory.");
+			    perror("Exec activate_solider_listen/calloc function failed.");
 			    fclose(alive_machines_fd);
-			    exit(0);
+			    break;
 		    }
 		    while(fread(alive_machines_json, sizeof(char), 8192, alive_machines_fd))
 		    {
-			    printf("respond a REQUEST_ALIVE_MACHINES request\n");
+			    printf("Exec activate_solider_listen/fread function failed.\n");
 			    send(client_sock, alive_machines_json, strlen(alive_machines_json), 0);
 			    memset(alive_machines_json, 0, 8192);
 		    }
@@ -1184,7 +1239,7 @@ char *fetch_rt_dg_from_file(void)
 	{
 		perror("calloc memory.");
 		fclose(rt_dg_fd);
-		exit(0);
+		return NULL;
 	}
 	fread(rt_dg_json, sizeof(char), alive_machine_file_size, rt_dg_fd);
 	fclose(rt_dg_fd);
@@ -1193,7 +1248,7 @@ char *fetch_rt_dg_from_file(void)
 
 
 
-void respond_hb(int client_sock, char *buf)
+bool respond_hb(int client_sock)
 {
 	char *respond_dg = listen_encap_datagram(RESOND_HEARTBEAT);
 
@@ -1201,11 +1256,12 @@ void respond_hb(int client_sock, char *buf)
 	if (ret == -1)
 	{
 		printf("send error.\n");
-		exit(0);
+		return false;
 	}
 	free(respond_dg);
 	respond_dg = NULL;
 	close(client_sock);
+	return true;
 }
 
 char *listen_encap_datagram(int type, ...)

@@ -8,7 +8,7 @@ bool init_conf(void)
 	{
 		if (access("/tmp/cMonitor/cCollection.conf.json", R_OK) != 0)
 		{
-			printf("No read permission.\n");
+			perror("No read permission.\n");
 			return false;
 		}
 		return true;
@@ -111,8 +111,7 @@ char *fetch_key_key_value_str(char *first_key, char *second_key)
 	if((conf_fd = fopen("/tmp/cMonitor/cCollection.conf.json", "r")) == NULL)
 	{
 		perror("open conf file.");
-		fclose(conf_fd);
-		exit(0);
+		return NULL;
 	}
 	fseek(conf_fd, 0, SEEK_END);
 	conf_file_size = ftell(conf_fd);
@@ -122,7 +121,7 @@ char *fetch_key_key_value_str(char *first_key, char *second_key)
 	{
 		perror("calloc memory.");
 		fclose(conf_fd);
-		exit(0);
+		return NULL;
 	}
 	fread(conf_json, sizeof(char), conf_file_size, conf_fd);
 	fclose(conf_fd);
@@ -152,7 +151,7 @@ bool fetch_key_key_value_bool(char *first_key, char *second_key)
 	if((conf_fd = fopen("/tmp/cMonitor/cCollection.conf.json", "r")) == NULL)
 	{
 		perror("open conf file.");
-		exit(0);
+		return NULL;
 	}
 	fseek(conf_fd, 0, SEEK_END);
 	conf_file_size = ftell(conf_fd);
@@ -162,7 +161,7 @@ bool fetch_key_key_value_bool(char *first_key, char *second_key)
 	{
 		perror("calloc memory.");
 		fclose(conf_fd);
-		exit(0);
+		return NULL;
 	}
 	fread(conf_json, sizeof(char), conf_file_size, conf_fd);
 	fclose(conf_fd);
@@ -189,8 +188,7 @@ int fetch_key_key_value_int(char *first_key, char *second_key)
 	if((conf_fd = fopen("/tmp/cMonitor/cCollection.conf.json", "r")) == NULL)
 	{
 		perror("open conf file.");
-		fclose(conf_fd);
-		exit(0);
+		return NULL;
 	}
 	fseek(conf_fd, 0, SEEK_END);
 	conf_file_size = ftell(conf_fd);
@@ -199,8 +197,7 @@ int fetch_key_key_value_int(char *first_key, char *second_key)
 	if (conf_json == NULL)
 	{
 		perror("calloc memory.");
-		fclose(conf_fd);
-		exit(0);
+		return NULL;
 	}
 	fread(conf_json, sizeof(char), conf_file_size, conf_fd);
 	fclose(conf_fd);

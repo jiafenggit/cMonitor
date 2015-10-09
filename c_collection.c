@@ -131,14 +131,13 @@ char *collect_sys_info(void)
 
 	if (init_conf() == false)
 	{
-		printf("init conf error.\n");
-		exit(0);
+		printf("Exec collect_sys_info function failed.\n");
+		return NULL;
 	}
 	if((conf_fd = fopen("/tmp/cMonitor/cCollection.conf.json", "r")) == NULL)
 	{
-		perror("open conf file.");
-		fclose(conf_fd);
-		exit(0);
+		perror("Exec collect_sys_info/fopen function failed.");
+		return NULL;
 	}
 	fseek(conf_fd, 0, SEEK_END);
 	conf_file_size = ftell(conf_fd);
@@ -146,9 +145,10 @@ char *collect_sys_info(void)
 	conf_json = (char *)calloc(conf_file_size + 1, sizeof(char));
 	if (conf_json == NULL)
 	{
-		perror("calloc memory.");
+		perror("Exec collect_sys_info/calloc function failed.");
+		free(conf_json);
 		fclose(conf_fd);
-		exit(0);
+		return NULL;
 	}
 	fread(conf_json, sizeof(char), conf_file_size, conf_fd);
 	fclose(conf_fd);
@@ -169,11 +169,14 @@ char *collect_sys_info(void)
 
 	cJSON_Delete(conf_root);
 	sys_info_json = convert_to_json(collection_dict);
-	printf("json:%s\nsize:%ld\n", sys_info_json, strlen(sys_info_json) *sizeof(char));
 	if (release_dict(collection_dict) == false)
 	{
-		printf("release dict error.\n");
+		printf("Exec collect_sys_info/release_dict function failed.\n");
+		free(conf_json);
+		return sys_info_json;
+		return NULL;
 	}
+	printf("collect_sys_info succeeded.size:%ld\n", strlen(sys_info_json) *sizeof(char));
 	free(conf_json);
 	return sys_info_json;
 }
@@ -1028,7 +1031,7 @@ bool collect_disk_info(cJSON *collection, dict *collection_dict)
 	if (remove(file_name) != 0)
 	{
 		perror("remove file.");
-		exit(0);
+		return false;
 	}
 	free(value);
 	value = NULL;

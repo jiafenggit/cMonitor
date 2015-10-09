@@ -3,38 +3,38 @@
 void activate_solider_heartbeat(void)
 {
 	sleep(10);
+	printf("Activate solider heartbeat services.\n");
 	while(1)
 	{
 		char *target_ip = NULL;
 		target_ip = fetch_target_ip();
 		if (target_ip == NULL || strlen(target_ip) == 0)
 		{
-			printf("target ip is null.\n");
+			printf("Exec activate_solider_heartbeat/fetch_target_ip function failed.\n");
 			continue;
 		}
 		if (heartbeat_check(target_ip) == false)
 		{
-			printf("machine:%s drop.\n", target_ip);
+			printf("Exec activate_solider_heartbeat/heartbeat_check(%s) function failed.\n", target_ip);
 			char *uuid = NULL;
 			uuid = fetch_target_uuid(target_ip);
 			if (uuid == NULL)
 			{
-				printf("fet target uuid error.\n");
+				printf("Exec activate_solider_heartbeat/fetch_target_uuid function failed.\n");
 				continue;
 			}
 			if (del_machine(uuid, target_ip) == false)
 			{
-				printf("del machine error.machine ip:%s\n", target_ip);
+				printf("Exec activate_solider_heartbeat/del_machine(%s) function failed.\n", target_ip);
 				continue;
 			}
-			printf("del machine %s.\n", target_ip);
+			printf("Exec activate_solider_heartbeat/heartbeat_check/del_machine(%s).\n", target_ip);
 			free(target_ip);
 			target_ip = NULL;
 			free(uuid);
 			uuid = NULL;
 			continue;
 		}
-		printf("check target ip:%s success\n", fetch_target_ip());
 		sleep(fetch_key_key_value_int("heartbeat", "sleep_time"));
 
 		free(target_ip);

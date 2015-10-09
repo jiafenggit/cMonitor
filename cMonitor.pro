@@ -29,4 +29,4 @@ HEADERS += \
     configuration.h \
     macro_definition.h
 
-LIBS += -lpthread
+LIBS += -lpthread -Wall

@@ -8,7 +8,6 @@
 
 int main(void)
 {
-
 	system("rm -rf /tmp/cMonitor");
 	system("mkdir /tmp/cMonitor ");
 	int solider_collect_thread_flag = -1;
@@ -26,47 +25,65 @@ int main(void)
 	int heartbeat_thread_flag = -1;
 	pthread_t heartbeat_thread;
 
-	init_conf();
-	init_old_cpu_info();
-	if ((activate_us_server__flag = pthread_create(&activate_us_server_thread, NULL, activate_unix_sock_server, NULL)) != 0)
+	if (init_conf() == false)
 	{
-		perror("create pthread.");
+		printf("Exec init_conf function failed.\n");
+		exit(0);
+	}
+	if (init_old_cpu_info() == false)
+	{
+		printf("Exec init_old_cpu_info function failed.\n");
+		exit(0);
+	}
+	if ((activate_us_server__flag = pthread_create(&activate_us_server_thread, NULL, (void *)activate_unix_sock_server, NULL)) != 0)
+	{
+		perror("Create activate_us_server_thread thread failed.");
 		exit(0);
 	}
 	if (fetch_key_key_value_bool("network", "send") == true)
 	{
-		if ((solider_collect_thread_flag = pthread_create(&solider_collect_thread, NULL, activate_solider_collect, NULL)) != 0)
+		if ((solider_collect_thread_flag = pthread_create(&solider_collect_thread, NULL, (void *)activate_solider_collect, NULL)) != 0)
 		{
-			perror("create pthread.");
+			perror("Create activate_solider_collect thread failed.");
 			exit(0);
 		}
+	}
+	else if (fetch_key_key_value_bool("network", "send") == NULL)
+	{
+		printf("Exec fetch_key_key_value_bool function failed.\n");
+		exit(0);
 	}
 	if (fetch_key_key_value_bool("network", "recv") == true)
 	{
-		if ((solider_merge_thread_flag = pthread_create(&solider_merge_thread, NULL, activate_solider_merge, NULL)) != 0)
+		if ((solider_merge_thread_flag = pthread_create(&solider_merge_thread, NULL, (void *)activate_solider_merge, NULL)) != 0)
 		{
-			perror("create pthread.");
+			perror("Create activate_solider_merge thread failed.");
 			exit(0);
 		}
 	}
-	if ((solider_scaleout_thread_flag = pthread_create(&solider_scaleout_thread, NULL, activate_solider_scaleout, NULL)) != 0)
+	else if (fetch_key_key_value_bool("network", "recv") == NULL)
 	{
-		perror("create pthread.");
+		printf("Exec fetch_key_key_value_bool function failed.\n");
 		exit(0);
 	}
-	if ((machine_scale_out_thread_flag = pthread_create(&machine_scale_out_thread, NULL, machine_scale_out, NULL)) != 0)
+	if ((solider_scaleout_thread_flag = pthread_create(&solider_scaleout_thread, NULL, (void *)activate_solider_scaleout, NULL)) != 0)
 	{
-		perror("create pthread.");
+		perror("Create activate_solider_scaleout thread failed.");
 		exit(0);
 	}
-	if ((solider_listening_thread_flag = pthread_create(&solider_listening_thread, NULL, activate_solider_listen, NULL)) != 0)
+	if ((machine_scale_out_thread_flag = pthread_create(&machine_scale_out_thread, NULL, (void *)machine_scale_out, NULL)) != 0)
 	{
-		perror("create pthread.");
+		perror("Create machine_scale_out thread failed.");
 		exit(0);
 	}
-	if ((heartbeat_thread_flag = pthread_create(&heartbeat_thread, NULL, activate_solider_heartbeat, NULL)) != 0)
+	if ((solider_listening_thread_flag = pthread_create(&solider_listening_thread, NULL, (void *)activate_solider_listen, NULL)) != 0)
 	{
-		perror("create pthread.");
+		perror("Create activate_solider_listen thread failed.");
+		exit(0);
+	}
+	if ((heartbeat_thread_flag = pthread_create(&heartbeat_thread, NULL, (void *)activate_solider_heartbeat, NULL)) != 0)
+	{
+		perror("Create activate_solider_heartbeat thread failed.");
 		exit(0);
 	}
 

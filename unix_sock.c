@@ -6,11 +6,15 @@ void activate_unix_sock_server(void)
 	int listen_sock;
 	if ((listen_sock = socket(PF_UNIX, SOCK_STREAM, 0)) < 0)
 	{
-		perror("unix socket");
+		perror("Exec activate_unix_sock_server/socket function failed.");
 		exit(0);
 	}
 	int opt=1;
-	setsockopt(listen_sock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+	if (setsockopt(listen_sock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) != 0)
+	{
+		perror("Exec activate_unix_sock_server/setsockopt function failed.");
+		exit(0);
+	}
 	unlink("/tmp/cMonitor/monitor_solider.sock");
 	struct sockaddr_un server_addr;
 	server_addr.sun_family = AF_UNIX;
@@ -18,29 +22,45 @@ void activate_unix_sock_server(void)
 
 	if (bind(listen_sock, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0)
 	{
-		perror("unix socket");
+		perror("Exec activate_unix_sock_server/bind function failed.");
 		exit(0);
 	}
 	if (listen(listen_sock, 5) < 0)
 	{
-		perror("unix socket");
+		perror("Exec activate_unix_sock_server/listen function failed.");
 		exit(0);
 	}
+	printf("Activate unix socket server services.\n");
 	while(true)
 	{
 		int client_sock;
 		client_sock = accept(listen_sock, NULL, NULL);
 		if (client_sock == -1)
 		{
-			perror("client socket");
+			perror("Exec activate_unix_sock_server/accept function failed.");
 			continue;
 		}
 		char recv_buf[1024];
 		memset(recv_buf, 0, sizeof(recv_buf));
-		read(client_sock, recv_buf,1024);
-		respond_dg(recv_buf);
+		if (read(client_sock, recv_buf,1024) == -1)
+		{
+			perror("Exec activate_unix_sock_server/read function failed.");
+			close(client_sock);
+			continue;
+		}
+		if (respond_dg(recv_buf) == false)
+		{
+			perror("Exec respond_dg function failed.");
+			close(client_sock);
+			continue;
+		}
 
-		write(client_sock, "4096", 8);
+		if ( write(client_sock, "4096", 8) == -1)
+		{
+			perror("Exec activate_unix_sock_server/write function failed.");
+			close(client_sock);
+			continue;
+		}
 		close(client_sock);
 	}
 	close(listen_sock);
@@ -100,7 +120,7 @@ char *us_encap_datagram(int dg_type, char *datagram)
 
 }
 
-void respond_dg(char *data_gram)
+bool respond_dg(char *data_gram)
 {
 	char *type = str_split(data_gram, '|', 0);
 
@@ -111,19 +131,19 @@ void respond_dg(char *data_gram)
 		char *machine_ip = str_split(data_gram, '|', 2);
 		if (add_machine_to_file(uuid, machine_ip) == false)
 		{
-			printf("add machine to cluster failed.\n");
+			printf("Exec respond_dg/add_machine_to_file function failed.\n");
 			free(type);
 			free(uuid);
 			free(machine_ip);
-			exit(0);
+			return false;
 		}
 		free(type);
 		free(uuid);
 		free(machine_ip);
 		if (sync_alive_machines_mul() == false)
 		{
-			printf("sync alive machines failed.\n");
-			exit(0);
+			printf("Exec respond_dg/sync_alive_machines_mul function failed.\n");
+			return false;
 		}
 	}
 		break;
@@ -131,21 +151,21 @@ void respond_dg(char *data_gram)
 	{
 		char *uuid = str_split(data_gram, '|', 1);
 		char *machine_ip = str_split(data_gram, '|', 2);
-		if (del_machine_from_file(uuid, machine_ip) == false)
+		if (del_machine_from_file(uuid) == false)
 		{
-			printf("del machine to cluster failed.\n");
+			printf("Exec respond_dg/del_machine_from_file function failed.\n");
 			free(type);
 			free(uuid);
 			free(machine_ip);
-			exit(0);
+			return false;
 		}
 		if (sync_dead_machines_mul(uuid, machine_ip) == false)
 		{
-			printf("sync dead machines failed.\n");
+			printf("Exec respond_dg/sync_dead_machines_mul function failed.\n");
 			free(machine_ip);
 			free(type);
 			free(uuid);
-			exit(0);
+			return false;
 		}
 		free(machine_ip);
 		free(type);
@@ -158,11 +178,11 @@ void respond_dg(char *data_gram)
 		char *machine_ip = str_split(data_gram, '|', 2);
 		if (add_machine_to_file(uuid, machine_ip) == false)
 		{
-			printf("add machine to cluster failed.\n");
+			printf("Exec respond_dg/add_machine_to_file function failed.\n");
 			free(type);
 			free(uuid);
 			free(machine_ip);
-			exit(0);
+			return false;
 		}
 		free(type);
 		free(uuid);
@@ -173,13 +193,13 @@ void respond_dg(char *data_gram)
 	{
 		char *uuid = str_split(data_gram, '|', 1);
 		char *machine_ip = str_split(data_gram, '|', 2);
-		if (del_machine_from_file(uuid, machine_ip) == false)
+		if (del_machine_from_file(uuid) == false)
 		{
-			printf("del machine to cluster failed.\n");
+			printf("Exec respond_dg/del_machine_from_file function failed.\n");
 			free(type);
 			free(uuid);
 			free(machine_ip);
-			exit(0);
+			return false;
 		}
 		free(type);
 		free(uuid);
@@ -187,8 +207,10 @@ void respond_dg(char *data_gram)
 	}
 		break;
 	default:
+		return false;
 		break;
 	}
+	return true;
 }
 
 bool add_machine_to_file(char *uuid, char *machine_ip)
@@ -273,7 +295,7 @@ bool add_machine_to_file(char *uuid, char *machine_ip)
 	}
 }
 
-bool del_machine_from_file(char *uuid, char *machine_ip)
+bool del_machine_from_file(char *uuid)
 {
 	char *alive_machine_json = NULL;
 	cJSON *root;
@@ -423,6 +445,11 @@ void mulcast_sync_dg(char *data)
 	mcast_addr.sin_family = AF_INET;
 	char solider_mul_addr[20];
 	char *fetch_value_buf = fetch_key_key_value_str("network", "scale_out_multicast_add");
+	if (fetch_value_buf == NULL)
+	{
+		printf("Exec fetch_key_key_value_str function failed.\n");
+		return NULL;
+	}
 	memset(solider_mul_addr, 0, sizeof(solider_mul_addr));
 	memcpy(solider_mul_addr, fetch_value_buf, 16);
 	free(fetch_value_buf);
