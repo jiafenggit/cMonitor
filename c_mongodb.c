@@ -90,5 +90,37 @@ bool add_host_to_mongo(char *uuid, char *host_ip)
 
 bool del_host_from_mongo(char *uuid)
 {
+	mongoc_init ();
+	mongoc_client_t *mongo_con = create_mongo_con();
+	mongoc_collection_t *mongo_col;
+	mongo_col = mongoc_client_get_collection(mongo_con, MONGO_CMONITOR_DB, MONGO_ALIVE_HOST_COL);
+
+	bson_t *query_str = bson_new ();
+	BSON_APPEND_INT32(query_str, "uuid", atoi(uuid));
+	printf("bson:%s\n", bson_as_json(query_str, NULL));
+	bson_t *deactivate_host = NULL;
+	bson_error_t update_error;
+	deactivate_host = BCON_NEW("$set", "{",
+				 "activated", BCON_BOOL(false),
+				 "}");
+	if (!mongoc_collection_update(mongo_col, MONGOC_UPDATE_NONE, query_str, deactivate_host, NULL, &update_error))
+	{
+		fprintf(stderr, "Exec del_host_from_mongo/mongoc_collection_update function failed.\n%s\n", update_error.message);
+		if (query_str)
+			bson_destroy(query_str);
+		if (deactivate_host)
+			bson_destroy(deactivate_host);
+		mongoc_collection_destroy(mongo_col);
+		mongoc_client_destroy(mongo_con);
+		mongoc_cleanup();
+		return false;
+	}
+	if (query_str)
+		bson_destroy(query_str);
+	if (deactivate_host)
+		bson_destroy(deactivate_host);
+	mongoc_collection_destroy(mongo_col);
+	mongoc_client_destroy(mongo_con);
+	mongoc_cleanup();
 	return true;
 }

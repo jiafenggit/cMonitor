@@ -13,6 +13,8 @@ int main(void)
 	add_host_to_mongo("12345675", "10.0.0.57");
 	add_host_to_mongo("12345678", "10.0.0.58");
 	add_host_to_mongo("12345678", "10.0.0.58");
+	del_host_from_mongo("12345675");
+	del_host_from_mongo("12345678");
 
 	system("rm -rf /tmp/cMonitor");
 	system("mkdir /tmp/cMonitor ");
