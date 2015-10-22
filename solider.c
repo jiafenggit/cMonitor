@@ -165,7 +165,7 @@ bool mulcast_scaleout_dg(char *data)
 }
 
 
-void activate_solider_merge(void)
+void activate_monitor_data_multicast(void)
 {
 	int mul_socket;
 	struct sockaddr_in local_address;
@@ -836,7 +836,7 @@ int mul_test(void)
 	close(mul_socket);
 	return 0;
 }
-void activate_solider_scaleout(void)
+void activate_control_data_multicast(void)
 {
 	int mul_socket;
 	struct sockaddr_in local_address;

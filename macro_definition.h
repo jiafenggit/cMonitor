@@ -27,11 +27,22 @@
 #define MERGE_HOUR_TO_DAY 1024
 #define REQUEST_ALIVE_IP 1025
 
-#define CONFIG_FILE_PATH "/tmp/cMonitor/cCollection.conf.json"
-#define _FILE_PATH ""
-#define _FILE_PATH ""
-#define _FILE_PATH ""
-#define _FILE_PATH ""
+//#define CONFIG_FILE_PATH "/tmp/cMonitor/cCollection.conf.json"
+//#define _FILE_PATH	""
+//#define _FILE_PATH	""
+//#define _FILE_PATH	""
+//#define _FILE_PATH	""
+
+#define MONGO_CONNECT_STR		"mongodb://10.130.152.27:27017"
+#define MONGO_CMONITOR_DB	"cmonitor_db"
+#define MONGO_ALIVE_HOST_COL	"alive_host_col"
+#define MONGO_DEAD_HOST_COL	"dead_host_col"
+
+
+
+
+
+
 
 
 #endif // MACRO_DEFINITION_H

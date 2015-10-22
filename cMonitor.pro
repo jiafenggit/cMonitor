@@ -12,7 +12,8 @@ SOURCES += main.c \
     solider.c \
     heartbeat.c \
     unix_sock.c \
-    configuration.c
+    configuration.c \
+    c_mongodb.c
 
 include(deployment.pri)
 qtcAddDeployment()
@@ -27,6 +28,10 @@ HEADERS += \
     heartbeat.h \
     unix_sock.h \
     configuration.h \
-    macro_definition.h
+    macro_definition.h \
+    c_mongodb.h
 
 LIBS += -lpthread -Wall
+
+CONFIG += link_pkgconfig
+PKGCONFIG += libmongoc-1.0

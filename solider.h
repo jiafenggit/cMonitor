@@ -12,13 +12,13 @@
 void activate_solider_collect(void);
 void activate_solider_listen(void);
 
-void activate_solider_scaleout(void);
+void activate_control_data_multicast(void);
 void machine_scale_out(void);
 bool respond_hb(int client_sock);
 bool mulcast_dg(char *json_data);
 bool mulcast_scaleout_dg(char *data);
 
-void activate_solider_merge(void);
+void activate_monitor_data_multicast(void);
 char *mul_encap_datagram(int dg_type, char *datagram);
 bool mul_parse_datagram(char *datagram, dict *dg_dict);
 bool merge_solider_rtdg(dict *solider_rt_dict, dict *dg_dict, char *buf);
