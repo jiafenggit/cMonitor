@@ -4,12 +4,24 @@
 
 void activate_solider_collect(void)
 {
-	char *sys_info_dg = NULL;
-	char *sys_info_json = NULL;
 	printf("Activate solider collect services.\n");
 	while (true)
 	{
-		sys_info_json = collect_sys_info();
+		char *sys_info_dg = NULL;
+		char *sys_info_json = NULL;
+		sys_info_json = (char *)calloc(sizeof(char), MAX_SINGLE_HOST_INFO_SIZE);
+		pthread_t collect_thread;
+		int collect_thread_flag = -1;
+		if ((collect_thread_flag = pthread_create(&collect_thread, NULL, (void *)collect_sys_info, sys_info_json)) != 0)
+		{
+			perror("Create activate_solider_collect thread failed.");
+			continue;
+		}
+		sleep(MAX_COLLECT_USED_TIME);
+		if (collect_thread_flag == 0)
+		{
+			pthread_join(collect_thread, NULL);
+		}
 		sys_info_dg = mul_encap_datagram(RT_HOST, sys_info_json);
 		if (mulcast_dg(sys_info_dg) == false)
 		{
@@ -22,7 +34,7 @@ void activate_solider_collect(void)
 		free(sys_info_dg);
 		free(sys_info_json);
 		sys_info_json = NULL;
-		sleep(fetch_key_key_value_int("collection", "sleep_time"));
+		sleep(fetch_key_key_value_int("collection", "sleep_time") - MAX_COLLECT_USED_TIME);
 	}
 }
 

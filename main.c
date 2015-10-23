@@ -1,5 +1,4 @@
-#include <stdio.h>
-#include <pthread.h>
+#include "macro_definition.h"
 #include "solider.h"
 #include "unix_sock.h"
 #include "heartbeat.h"
@@ -10,13 +9,6 @@
 
 int main(void)
 {
-	add_host_to_mongo("12345678", "10.0.0.56");
-	add_host_to_mongo("12345675", "10.0.0.57");
-	add_host_to_mongo("12345678", "10.0.0.58");
-	add_host_to_mongo("12345678", "10.0.0.58");
-	del_host_from_mongo("12345675");
-	del_host_from_mongo("12345678");
-
 	system("rm -rf /tmp/cMonitor");
 	system("mkdir /tmp/cMonitor ");
 	int solider_collect_thread_flag = -1;

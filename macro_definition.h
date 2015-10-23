@@ -23,7 +23,10 @@
 #include<sys/un.h>
 #include <unistd.h>
 #include <mongoc.h>
+#include <pthread.h>
 
+#define MAX_SINGLE_HOST_INFO_SIZE	8191
+#define MAX_COLLECT_USED_TIME		2
 
 #define RT_HOST			0
 #define RT_GROUP		1

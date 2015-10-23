@@ -118,7 +118,7 @@ bool fetch_vaules_from_file(char *result_values,  char *file_path, short key_num
     return true;
 }
 
-char *collect_sys_info(void)
+void collect_sys_info(char *sys_info_json_arg)
 {
 	char *conf_json = NULL;
 	FILE *conf_fd = NULL;
@@ -132,12 +132,12 @@ char *collect_sys_info(void)
 	if (init_conf() == false)
 	{
 		printf("Exec collect_sys_info function failed.\n");
-		return NULL;
+		return;
 	}
 	if((conf_fd = fopen("/tmp/cMonitor/cCollection.conf.json", "r")) == NULL)
 	{
 		perror("Exec collect_sys_info/fopen function failed.");
-		return NULL;
+		return;
 	}
 	fseek(conf_fd, 0, SEEK_END);
 	conf_file_size = ftell(conf_fd);
@@ -148,7 +148,7 @@ char *collect_sys_info(void)
 		perror("Exec collect_sys_info/calloc function failed.");
 		free(conf_json);
 		fclose(conf_fd);
-		return NULL;
+		return;
 	}
 	fread(conf_json, sizeof(char), conf_file_size, conf_fd);
 	fclose(conf_fd);
@@ -173,12 +173,12 @@ char *collect_sys_info(void)
 	{
 		printf("Exec collect_sys_info/release_dict function failed.\n");
 		free(conf_json);
-		return sys_info_json;
-		return NULL;
+		return;
 	}
+	memcpy(sys_info_json_arg, sys_info_json, strlen(sys_info_json));
 	printf("collect_sys_info succeeded.size:%ld\n", strlen(sys_info_json) *sizeof(char));
 	free(conf_json);
-	return sys_info_json;
+	free(sys_info_json);
 }
 
 
