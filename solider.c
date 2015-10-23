@@ -904,7 +904,8 @@ void activate_control_data_multicast(void)
 		split(uuid, buf , '|', 1);
 		split(machine_ip, buf , '|', 2);
 		printf("Exec activate_solider_scaleout/add_machine(%s) function succeeded.\n", machine_ip);
-		if (atoi(type) == SCALEOUT_DG)
+		switch (atoi(type)) {
+		case SCALEOUT_DG:
 		{
 			if (add_machine(uuid, machine_ip) == false)
 			{
@@ -912,7 +913,8 @@ void activate_control_data_multicast(void)
 				continue;
 			}
 		}
-		if (atoi(type) == SYNC_ALIVE_MACHINE)
+			break;
+		case SYNC_ALIVE_MACHINE:
 		{
 			if (sync_alive_machines(uuid, machine_ip) == false)
 			{
@@ -920,13 +922,18 @@ void activate_control_data_multicast(void)
 				continue;
 			}
 		}
-		if (atoi(type) == SYNC_DEAD_MACHINE)
+			break;
+		case SYNC_DEAD_MACHINE:
 		{
 			if (sync_dead_machines(uuid, machine_ip) == false)
 			{
 				printf("Exec activate_solider_scaleout/sync_dead_machines(%s) function failed.\n", machine_ip);
 				continue;
 			}
+		}
+			break;
+		default:
+			break;
 		}
 
 	}
@@ -939,30 +946,22 @@ void activate_control_data_multicast(void)
 
 bool add_machine(char *uuid, char *machine_ip)
 {
-	char *dg_message;
-	dg_message = (char *)calloc(64, sizeof(char));
-
-	strcat(dg_message, "2052");
-	strcat(dg_message, "|");
-	strcat(dg_message, uuid);
-	strcat(dg_message, "|");
-	strcat(dg_message, machine_ip);
-	// unix sock send
-	char *recv = NULL;
-	recv = send_and_recv_to_us(dg_message);
-	if (atoi(recv) != SUCCESS)
+	if (add_host_to_mongo(uuid, machine_ip) == false)
 	{
-		printf("add machine:%s to unix sock server failed.\n", machine_ip);
-		free(recv);
-		recv = NULL;
-		free(dg_message);
-		dg_message = NULL;
+		printf("Exec add_machine/add_host_to_mongo function failed.\n");
 		return false;
 	}
-	free(recv);
-	recv = NULL;
-	free(dg_message);
-	dg_message = NULL;
+	if (add_machine_to_file(uuid, machine_ip) == false)
+	{
+		printf("Exec add_machine/add_machine_to_file function failed.\n");
+		return false;
+	}
+	if (sync_alive_machines_mul() == false)
+	{
+		printf("Exec add_machine/sync_alive_machines_mul function failed.\n");
+		return false;
+	}
+
 	return true;
 }
 

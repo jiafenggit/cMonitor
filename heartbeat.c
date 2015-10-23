@@ -235,30 +235,21 @@ bool heartbeat_check(char *target_ip)
 
 bool del_machine(char *uuid, char *machine_ip)
 {
-	char *dg_message;
-	dg_message = (char *)calloc(64, sizeof(char));
-
-	strcat(dg_message, "2053");
-	strcat(dg_message, "|");
-	strcat(dg_message, uuid);
-	strcat(dg_message, "|");
-	strcat(dg_message, machine_ip);
-	// unix sock send
-	char *recv = NULL;
-	recv = send_and_recv_to_us(dg_message);
-	if (atoi(recv) != SUCCESS)
+	if (del_host_from_mongo(uuid) == false)
 	{
-		printf("del machine:%s to unix sock server failed.\n", machine_ip);
-		free(recv);
-		recv = NULL;
-		free(dg_message);
-		dg_message = NULL;
+		printf("Exec del_machine/del_host_from_mongo function failed.\n");
 		return false;
 	}
-	free(recv);
-	recv = NULL;
-	free(dg_message);
-	dg_message = NULL;
+	if (del_machine_from_file(uuid) == false)
+	{
+		printf("Exec del_machine/del_machine_from_file function failed.\n");
+		return false;
+	}
+	if (sync_dead_machines_mul(uuid, machine_ip) == false)
+	{
+		printf("Exec del_machine/sync_dead_machines_mul function failed.\n");
+		return false;
+	}
 	return true;
 
 

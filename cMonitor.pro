@@ -13,7 +13,9 @@ SOURCES += main.c \
     heartbeat.c \
     unix_sock.c \
     configuration.c \
-    c_mongodb.c
+    c_mongodb.c \
+    monitor_data_multicast.c \
+    control_data_multicast.c
 
 include(deployment.pri)
 qtcAddDeployment()
@@ -29,7 +31,9 @@ HEADERS += \
     unix_sock.h \
     configuration.h \
     macro_definition.h \
-    c_mongodb.h
+    c_mongodb.h \
+    monitor_data_multicast.h \
+    control_data_multicast.h
 
 LIBS += -lpthread -Wall
 
