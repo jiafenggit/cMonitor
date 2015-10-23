@@ -5,6 +5,7 @@
 #include "heartbeat.h"
 #include "configuration.h"
 #include "c_mongodb.h"
+#include "control_data_multicast.h"
 
 
 int main(void)
@@ -20,8 +21,6 @@ int main(void)
 	system("mkdir /tmp/cMonitor ");
 	int solider_collect_thread_flag = -1;
 	pthread_t solider_collect_thread;
-	int activate_us_server__flag = -1;
-	pthread_t activate_us_server_thread;
 	int solider_merge_thread_flag = -1;
 	pthread_t solider_merge_thread;
 	int solider_scaleout_thread_flag = -1;
@@ -41,11 +40,6 @@ int main(void)
 	if (init_old_cpu_info() == false)
 	{
 		printf("Exec init_old_cpu_info function failed.\n");
-		exit(0);
-	}
-	if ((activate_us_server__flag = pthread_create(&activate_us_server_thread, NULL, (void *)activate_unix_sock_server, NULL)) != 0)
-	{
-		perror("Create activate_us_server_thread thread failed.");
 		exit(0);
 	}
 	if (fetch_key_key_value_bool("network", "send") == true)
@@ -97,10 +91,6 @@ int main(void)
 
 
 
-	if (activate_us_server__flag == 0)
-	{
-		pthread_join(activate_us_server_thread, NULL);
-	}
 	if (solider_collect_thread_flag == 0)
 	{
 		pthread_join(solider_collect_thread, NULL);

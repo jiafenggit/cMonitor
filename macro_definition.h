@@ -1,6 +1,30 @@
 #ifndef MACRO_DEFINITION_H
 #define MACRO_DEFINITION_H
 
+#include <stdlib.h>
+#include <stdio.h>
+#include <stdarg.h>
+#include <unistd.h>
+#include <time.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/ioctl.h>
+#include <netinet/in.h>
+#include <net/if.h>
+#include <net/if_arp.h>
+#include <arpa/inet.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <sys/shm.h>
+#include <string.h>
+#include <ctype.h>
+#include <sys/file.h>
+#include <stdbool.h>
+#include<sys/un.h>
+#include <unistd.h>
+#include <mongoc.h>
+
+
 #define RT_HOST			0
 #define RT_GROUP		1
 #define RT_CLUSTER		2

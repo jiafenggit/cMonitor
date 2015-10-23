@@ -1,12 +1,6 @@
 #ifndef C_MONGODB_H
 #define C_MONGODB_H
 
-#include <mongoc.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
-#include <stdbool.h>
-
 #include "macro_definition.h"
 
 
