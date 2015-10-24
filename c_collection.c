@@ -195,23 +195,41 @@ char* convert_to_json(dict *collection_dict)
 		head = collection_dict->hash_table[0].table[key_index];
 		while(head && strlen(head->key) != 0)
 		{
-			cJSON_AddStringToObject(root, head->key, head->value.string_value);
+			switch (head->value_type) {
+			case INTTYPE:
+			{
+				cJSON_AddNumberToObject(root, head->key, head->value.num_value);
+			}
+				break;
+			case DECIMALTYPE:
+			{
+				cJSON_AddNumberToObject(root, head->key, head->value.decimal_value);
+			}
+				break;
+			case STRINGTYPE:
+			{
+				cJSON_AddStringToObject(root, head->key, head->value.string_value);
+			}
+				break;
+			default:
+				break;
+			}
 			head = head->next;
 		}
 	}
-	if(collection_dict->rehash_index != -1)
-	{
-	    head = NULL;
-	    for (key_index = 0; key_index < collection_dict->hash_table[1].size; key_index++)
-	    {
-		    head = collection_dict->hash_table[1].table[key_index];
-		    while(head && strlen(head->key) != 0)
-		    {
-			    cJSON_AddStringToObject(root, head->key, head->value.string_value);
-			    head = head->next;
-		    }
-	    }
-	}
+//	if(collection_dict->rehash_index != -1)
+//	{
+//	    head = NULL;
+//	    for (key_index = 0; key_index < collection_dict->hash_table[1].size; key_index++)
+//	    {
+//		    head = collection_dict->hash_table[1].table[key_index];
+//		    while(head && strlen(head->key) != 0)
+//		    {
+//			    cJSON_AddStringToObject(root, head->key, head->value.string_value);
+//			    head = head->next;
+//		    }
+//	    }
+//	}
 	sys_info_string = cJSON_Print(root);
 	cJSON_Delete(root);
 	return sys_info_string;
@@ -231,7 +249,7 @@ bool collect_cpu_info(cJSON *collection, dict *collection_dict)
 	{
 		fetch_vaules_from_file(value_buf, "/proc/cpuinfo", 1, "model name");
 		split(value, value_buf, ':', 1);
-		if(add_dict(collection_dict, "cpu_model_name", 2, value) == false)
+		if(add_dict(collection_dict, "cpu_model_name", STRINGTYPE, value) == false)
 		{
 			printf("dict add error.\n");
 			return false;
@@ -243,7 +261,7 @@ bool collect_cpu_info(cJSON *collection, dict *collection_dict)
 	{
 		fetch_vaules_from_file(value_buf, "/proc/cpuinfo", 1, "cpu cores");
 		split(value, value_buf, ':', 0);
-		if(add_dict(collection_dict, "cpu_num", 2, value) == false)
+		if(add_dict(collection_dict, "cpu_num", INTTYPE, atoi(value)) == false)
 		{
 			printf("dict add error.\n");
 			return false;
@@ -255,7 +273,7 @@ bool collect_cpu_info(cJSON *collection, dict *collection_dict)
 	{
 		fetch_vaules_from_file(value_buf, "/proc/cpuinfo", 1, "cpu MHz");
 		split(value, value_buf, ':', 0);
-		if(add_dict(collection_dict, "cpu_speed", 2, value) == false)
+		if(add_dict(collection_dict, "cpu_speed", DECIMALTYPE, atof(value)) == false)
 		{
 			printf("dict add error.\n");
 			return false;
@@ -273,7 +291,7 @@ bool collect_cpu_info(cJSON *collection, dict *collection_dict)
 		fgets(value_buf, 1024, fd);
 		fclose(fd);
 		split(value, value_buf, ' ', 1);
-		if(add_dict(collection_dict, "cpu_user", 2, value) == false)
+		if(add_dict(collection_dict, "cpu_user", INTTYPE, atoi(value)) == false)
 		{
 			printf("dict add error.\n");
 			return false;
@@ -291,7 +309,7 @@ bool collect_cpu_info(cJSON *collection, dict *collection_dict)
 		fgets(value_buf, 1024, fd);
 		fclose(fd);
 		split(value, value_buf, ' ', 2);
-		if(add_dict(collection_dict, "cpu_nice", 2, value) == false)
+		if(add_dict(collection_dict, "cpu_nice", INTTYPE, atoi(value)) == false)
 		{
 			printf("dict add error.\n");
 			return false;
@@ -309,7 +327,7 @@ bool collect_cpu_info(cJSON *collection, dict *collection_dict)
 		fgets(value_buf, 1024, fd);
 		fclose(fd);
 		split(value, value_buf, ' ', 3);
-		if(add_dict(collection_dict, "cpu_system", 2, value) == false)
+		if(add_dict(collection_dict, "cpu_system", INTTYPE, atoi(value)) == false)
 		{
 			printf("dict add error.\n");
 			return false;
@@ -327,7 +345,7 @@ bool collect_cpu_info(cJSON *collection, dict *collection_dict)
 		fgets(value_buf, 1024, fd);
 		fclose(fd);
 		split(value, value_buf, ' ', 4);
-		if(add_dict(collection_dict, "cpu_idle", 2, value) == false)
+		if(add_dict(collection_dict, "cpu_idle", INTTYPE, atoi(value)) == false)
 		{
 			printf("dict add error.\n");
 			return false;
@@ -362,7 +380,7 @@ bool collect_cpu_info(cJSON *collection, dict *collection_dict)
 		old_cpu_total = denominator;
 		memcpy(value, value_buf, strlen(value_buf));
 
-		if(add_dict(collection_dict, "cpu_utilization", 2, value) == false)
+		if(add_dict(collection_dict, "cpu_utilization", DECIMALTYPE, atof(value)) == false)
 		{
 			printf("dict add error.\n");
 			return false;
@@ -389,14 +407,14 @@ bool collect_machine_info(cJSON *collection, dict *collection_dict){
 	memcpy(value,  machine_ip, strlen(machine_ip));
 	free(machine_ip);
 	machine_ip = NULL;
-	if(add_dict(collection_dict, "machine_ip", 2, value) == false)
+	if(add_dict(collection_dict, "machine_ip", STRINGTYPE, value) == false)
 	{
 		printf("dict add error.\n");
 		return false;
 	}
 	memset(value, 0, strlen(value));
 	tmp = collect_machine_uuid();
-	if(add_dict(collection_dict, "uuid", 2, tmp) == false)
+	if(add_dict(collection_dict, "uuid", INTTYPE, atoi(tmp)) == false)
 	{
 		printf("dict add error.\n");
 		return false;
@@ -433,7 +451,7 @@ bool collect_machine_info(cJSON *collection, dict *collection_dict){
 		fgets(value_buf, 1024, fd);
 		fclose(fd);
 		split(value, value_buf, ' ', 0);
-		if(add_dict(collection_dict, "boot_time", 2, value) == false)
+		if(add_dict(collection_dict, "boot_time", DECIMALTYPE, atof(value)) == false)
 		{
 			printf("dict add error.\n");
 			return false;
@@ -450,7 +468,8 @@ bool collect_machine_info(cJSON *collection, dict *collection_dict){
 		}
 		fgets(value, 1024, fd);
 		fclose(fd);
-		if(add_dict(collection_dict, "os_name", 2, value) == false)
+		r_strip(value, " \n \l \\ n \n");
+		if(add_dict(collection_dict, "os_name", STRINGTYPE, value) == false)
 		{
 			printf("dict add error.\n");
 			return false;
@@ -563,7 +582,8 @@ bool collect_memory_info(cJSON *collection, dict *collection_dict)
 	{
 		fetch_vaules_from_file(value_buf, "/proc/meminfo", 1, "MemTotal");
 		split(value, value_buf, ':', 0);
-		if(add_dict(collection_dict, "mem_total", 2, value) == false)
+		r_strip(value, "kB");
+		if(add_dict(collection_dict, "mem_total", INTTYPE, atoi(value)) == false)
 		{
 			printf("dict add error.\n");
 			return false;
@@ -575,7 +595,8 @@ bool collect_memory_info(cJSON *collection, dict *collection_dict)
 	{
 		fetch_vaules_from_file(value_buf, "/proc/meminfo", 1, "MemFree");
 		split(value, value_buf, ':', 0);
-		if(add_dict(collection_dict, "mem_free", 2, value) == false)
+		r_strip(value, "kB");
+		if(add_dict(collection_dict, "mem_free", INTTYPE, atoi(value)) == false)
 		{
 			printf("dict add error.\n");
 			return false;
@@ -588,7 +609,8 @@ bool collect_memory_info(cJSON *collection, dict *collection_dict)
 		fetch_vaules_from_file(value_buf, "/proc/meminfo", 1, "Buffers");
 		split(value, value_buf, ':', 0);
 		buffer_cache += atoi(value);
-		if(add_dict(collection_dict, "mem_buffers", 2, value) == false)
+		r_strip(value, "kB");
+		if(add_dict(collection_dict, "mem_buffers", INTTYPE, atoi(value)) == false)
 		{
 			printf("dict add error.\n");
 			return false;
@@ -601,7 +623,8 @@ bool collect_memory_info(cJSON *collection, dict *collection_dict)
 		fetch_vaules_from_file(value_buf, "/proc/meminfo", 1, "Cached");
 		split(value, value_buf, ':', 0);
 		buffer_cache += atoi(value);
-		if(add_dict(collection_dict, "mem_cached", 2, value) == false)
+		r_strip(value, "kB");
+		if(add_dict(collection_dict, "mem_cached", INTTYPE, atoi(value)) == false)
 		{
 			printf("dict add error.\n");
 			return false;
@@ -624,7 +647,7 @@ bool collect_memory_info(cJSON *collection, dict *collection_dict)
 		numerator = atoi(value_buf);
 		memset(value, 0, strlen(value));
 		sprintf(value, "%f", 1.0 - ((float)numerator + buffer_cache )/ (float)denominator);
-		if(add_dict(collection_dict, "mem_utilization", 2, value) == false)
+		if(add_dict(collection_dict, "mem_utilization", DECIMALTYPE, atof(value)) == false)
 		{
 			printf("dict add error.\n");
 			return false;
@@ -653,7 +676,8 @@ bool collect_swap_info(cJSON *collection, dict *collection_dict)
 	{
 		fetch_vaules_from_file(value_buf, "/proc/meminfo", 1, "SwapTotal");
 		split(value, value_buf, ':', 0);
-		if(add_dict(collection_dict, "swap_total", 2, value) == false)
+		r_strip(value, "kB");
+		if(add_dict(collection_dict, "swap_total", INTTYPE, atoi(value)) == false)
 		{
 			printf("dict add error.\n");
 			return false;
@@ -665,7 +689,8 @@ bool collect_swap_info(cJSON *collection, dict *collection_dict)
 	{
 		fetch_vaules_from_file(value_buf, "/proc/meminfo", 1, "SwapFree");
 		split(value, value_buf, ':', 0);
-		if(add_dict(collection_dict, "swap_free", 2, value) == false)
+		r_strip(value, "kB");
+		if(add_dict(collection_dict, "swap_free", INTTYPE, atoi(value)) == false)
 		{
 			printf("dict add error.\n");
 			return false;
@@ -687,8 +712,8 @@ bool collect_swap_info(cJSON *collection, dict *collection_dict)
 		memcpy(value_buf, value, strlen(value) - 2);
 		numerator = atoi(value_buf);
 		memset(value, 0, strlen(value));
-		sprintf(value, "%f", (float)numerator / (float)denominator);
-		if(add_dict(collection_dict, "swap_utilization", 2, value) == false)
+		sprintf(value, "%f", 1 - (float)numerator / (float)denominator);
+		if(add_dict(collection_dict, "swap_utilization", DECIMALTYPE, atof(value)) == false)
 		{
 			printf("dict add error.\n");
 			return false;
@@ -721,7 +746,7 @@ bool collect_load_info(cJSON *collection, dict *collection_dict)
 		fgets(value_buf, 1024, fd);
 		fclose(fd);
 		split(value, value_buf, ' ', 0);
-		if(add_dict(collection_dict, "load_one", 2, value) == false)
+		if(add_dict(collection_dict, "load_one", DECIMALTYPE, atof(value)) == false)
 		{
 			printf("dict add error.\n");
 			return false;
@@ -739,7 +764,7 @@ bool collect_load_info(cJSON *collection, dict *collection_dict)
 		fgets(value_buf, 1024, fd);
 		fclose(fd);
 		split(value, value_buf, ' ', 1);
-		if(add_dict(collection_dict, "load_five", 2, value) == false)
+		if(add_dict(collection_dict, "load_five", DECIMALTYPE, atof(value)) == false)
 		{
 			printf("dict add error.\n");
 			return false;
@@ -757,7 +782,7 @@ bool collect_load_info(cJSON *collection, dict *collection_dict)
 		fgets(value_buf, 1024, fd);
 		fclose(fd);
 		split(value, value_buf, ' ', 2);
-		if(add_dict(collection_dict, "load_fifteen", 2, value) == false)
+		if(add_dict(collection_dict, "load_fifteen", DECIMALTYPE, atof(value)) == false)
 		{
 			printf("dict add error.\n");
 			return false;
@@ -793,7 +818,7 @@ bool collect_proc_info(cJSON *collection, dict *collection_dict)
 		memcpy(value_buf, value, strlen(value));
 		memset(value, 0, strlen(value));
 		split(value, value_buf, '/', 1);
-		if(add_dict(collection_dict, "proc_total", 2, value) == false)
+		if(add_dict(collection_dict, "proc_total", INTTYPE, atoi(value)) == false)
 		{
 			printf("dict add error.\n");
 			return false;
@@ -835,7 +860,7 @@ bool collect_network_info(cJSON *collection, dict *collection_dict)
 		fgets(value_buf, 1024, fd);
 		fclose(fd);
 		split(value, value_buf, ' ', 1);
-		if(add_dict(collection_dict, "bytes_in", 2, value) == false)
+		if(add_dict(collection_dict, "bytes_in", INTTYPE, atoi(value)) == false)
 		{
 			free(value);
 			value = NULL;
@@ -865,7 +890,7 @@ bool collect_network_info(cJSON *collection, dict *collection_dict)
 		fgets(value_buf, 1024, fd);
 		fclose(fd);
 		split(value, value_buf, ' ', 2);
-		if(add_dict(collection_dict, "packages_in", 2, value) == false)
+		if(add_dict(collection_dict, "packages_in", INTTYPE, atoi(value)) == false)
 		{
 			free(value);
 			value = NULL;
@@ -895,7 +920,7 @@ bool collect_network_info(cJSON *collection, dict *collection_dict)
 		fgets(value_buf, 1024, fd);
 		fclose(fd);
 		split(value, value_buf, ' ', 9);
-		if(add_dict(collection_dict, "bytes_out", 2, value) == false)
+		if(add_dict(collection_dict, "bytes_out", INTTYPE, atoi(value)) == false)
 		{
 			free(value);
 			value = NULL;
@@ -925,7 +950,7 @@ bool collect_network_info(cJSON *collection, dict *collection_dict)
 		fgets(value_buf, 1024, fd);
 		fclose(fd);
 		split(value, value_buf, ' ', 10);
-		if(add_dict(collection_dict, "packages_out", 2, value) == false)
+		if(add_dict(collection_dict, "packages_out", INTTYPE, atoi(value)) == false)
 		{
 			free(value);
 			value = NULL;
@@ -980,7 +1005,7 @@ bool collect_disk_info(cJSON *collection, dict *collection_dict)
 		fgets(value_buf, 1024, fd);
 		fclose(fd);
 		split(value, value_buf, ' ', 1);
-		if(add_dict(collection_dict, "disk_total", 2, value) == false)
+		if(add_dict(collection_dict, "disk_total", INTTYPE, atoi(value)) == false)
 		{
 			printf("dict add error.\n");
 			return false;
@@ -1000,7 +1025,7 @@ bool collect_disk_info(cJSON *collection, dict *collection_dict)
 		fgets(value_buf, 1024, fd);
 		fclose(fd);
 		split(value, value_buf, ' ', 3);
-		if(add_dict(collection_dict, "disk_free", 2, value) == false)
+		if(add_dict(collection_dict, "disk_free", INTTYPE, atoi(value)) == false)
 		{
 			printf("dict add error.\n");
 			return false;
@@ -1020,7 +1045,8 @@ bool collect_disk_info(cJSON *collection, dict *collection_dict)
 		fgets(value_buf, 1024, fd);
 		fclose(fd);
 		split(value, value_buf, ' ', 4);
-		if(add_dict(collection_dict, "disk_utilization", 2, value) == false)
+		r_strip(value, "%");
+		if(add_dict(collection_dict, "disk_utilization", DECIMALTYPE, atof(value) / 100) == false)
 		{
 			printf("dict add error.\n");
 			return false;
@@ -1071,7 +1097,7 @@ bool collect_custom_data(cJSON *conf_root, dict *collection_dict)
 		fgets(command_value, 64, fd);
 		fclose(fd);
 		strip(command_value);
-		if(add_dict(collection_dict, key, 2, command_value) == false)
+		if(add_dict(collection_dict, key, STRINGTYPE, command_value) == false)
 		{
 			printf("dict add error.\n");
 			return false;

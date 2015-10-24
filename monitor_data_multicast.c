@@ -183,7 +183,11 @@ bool merge_solider_rtdg(dict *cluster_rt_dict, dict *rt_dg_dict, char *buf)
 				memset(json_buf, 0, sizeof(json_buf));
 				split(json_buf, head->value.string_value, '|', 10);
 				rt_dg_root = cJSON_Parse(json_buf);
-				cJSON_AddItemToObject(cluster_rt_root, cJSON_GetObjectItem(rt_dg_root, "uuid")->valuestring, rt_dg_root);
+				printf("%s\n", json_buf);
+				char uuid[32];
+				memset(uuid, 0, sizeof(uuid));
+				sprintf(uuid, "%d", cJSON_GetObjectItem(rt_dg_root, "uuid")->valueint);
+				cJSON_AddItemToObject(cluster_rt_root, uuid, rt_dg_root);
 
 				head = head->next;
 			}
@@ -201,7 +205,7 @@ bool merge_solider_rtdg(dict *cluster_rt_dict, dict *rt_dg_dict, char *buf)
 				    memset(json_buf, 0, sizeof(json_buf));
 				    split(json_buf, head->value.string_value, '|', 10);
 				    rt_dg_root = cJSON_Parse(json_buf);
-				    cJSON_AddItemToObject(cluster_rt_root, cJSON_GetObjectItem(rt_dg_root, "uuid")->valuestring, rt_dg_root);
+				    cJSON_AddItemToObject(cluster_rt_root, cJSON_GetObjectItem(rt_dg_root, "uuid")->valueint, rt_dg_root);
 				    head = head->next;
 			    }
 			}

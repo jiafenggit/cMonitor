@@ -222,7 +222,7 @@ bool heartbeat_check(char *target_ip)
 	memset(response, 0, sizeof(response));
 	if (split(response, buf, '|', 1) == false)
 	{
-		printf("split datagram error.'n");
+		printf("split datagram error.\n");
 		return false;
 	}
 	if (strcmp("2049", response) != 0)
