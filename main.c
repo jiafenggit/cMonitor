@@ -9,6 +9,22 @@
 
 int main(void)
 {
+
+	char str[32];
+	memncpy(str, "cf}}}", 0, 1);
+	memset(str, 0, strlen(str));
+	memncpy(str, "{{{cf}}}", 8, 1);
+	memset(str, 0, strlen(str));
+	memncpy(str, "{{{cf}}}", 9, 2);
+	memset(str, 0, strlen(str));
+	memncpy(str, "{{{chengfei}}}", 3, 90);
+	memset(str, 0, strlen(str));
+	memncpy(str, "{{c{chengfei}}}", 0, 15);
+	l_strip(str, "{c{");
+	printf("%s\n", str);
+	r_strip(str, "}c}");
+	printf("%s\n", str);
+
 	system("rm -rf /tmp/cMonitor");
 	system("mkdir /tmp/cMonitor ");
 	int solider_collect_thread_flag = -1;

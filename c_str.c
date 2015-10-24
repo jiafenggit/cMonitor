@@ -45,7 +45,7 @@ bool strip(char *str)
     return true;
 }
 
-bool split_strip(char *str, char *split_chr)
+bool split_strip(char *str, char *strip_chr)
 {
     char *buf = NULL;
     char *buf_head = NULL;
@@ -65,7 +65,7 @@ bool split_strip(char *str, char *split_chr)
     buf_head = buf;
     while (*str != '\0')
     {
-	if((*str) != (*split_chr))
+	if((*str) != (*strip_chr))
         {
             *buf = *str;
             buf++;
@@ -81,6 +81,98 @@ bool split_strip(char *str, char *split_chr)
     buf = NULL;
     return true;
 }
+
+bool l_strip(char *str, char *strip_chr)
+{
+	char *buf = NULL;
+	char *str_head = NULL;
+	int strip_char_count = 0;
+	int strip_loction = 0;
+	strip_char_count = strlen(strip_chr);
+	str_head = str;
+	buf = (char *)calloc(strlen(str) + 1, sizeof(char));
+	if (buf == NULL)
+	{
+	    perror("calloc buf");
+	    return false;
+	}
+	while(true)
+	{
+		char str_chr = *str_head;
+		int index = 0;
+		bool chr_equal = false;
+		for (; index < strip_char_count; index++)
+		{
+			if (str_chr == strip_chr[index])
+			{
+				chr_equal = true;
+				strip_loction++;
+				break;
+			}
+		}
+		if (!chr_equal)
+		{
+			if ((memncpy(buf, str, strip_loction, strlen(str) - strip_loction)) == false)
+			{
+				printf("Memncpu string error.\n");
+				return false;
+			}
+			memset(str, 0, strlen(str));
+			memcpy(str, buf, strlen(buf));
+			free(buf);
+			buf = NULL;
+			return true;
+		}
+		str_head++;
+	}
+}
+
+
+bool r_strip(char *str, char *strip_chr)
+{
+	char *buf = NULL;
+	char *str_tail = NULL;
+	int strip_char_count = 0;
+	int strip_loction = 0;
+	strip_char_count = strlen(strip_chr);
+	str_tail = &str[strlen(str) -1];
+	buf = (char *)calloc(strlen(str) + 1, sizeof(char));
+	if (buf == NULL)
+	{
+	    perror("calloc buf");
+	    return false;
+	}
+	while(true)
+	{
+		char str_chr = *str_tail;
+		int index = 0;
+		bool chr_equal = false;
+		for (; index < strip_char_count; index++)
+		{
+			if (str_chr == strip_chr[index])
+			{
+				chr_equal = true;
+				strip_loction++;
+				break;
+			}
+		}
+		if (!chr_equal)
+		{
+			if ((memncpy(buf, str, 0, strlen(str) - strip_loction)) == false)
+			{
+				printf("Memncpu string error.\n");
+				return false;
+			}
+			memset(str, 0, strlen(str));
+			memcpy(str, buf, strlen(buf));
+			free(buf);
+			buf = NULL;
+			return true;
+		}
+		str_tail--;
+	}
+}
+
 
 bool split(char *result_str, char * origin_str, char split_chr, int split_index)
 {
@@ -210,8 +302,13 @@ bool memncpy(char *result_str, char *origin_str, int start_index, int cpy_num)
 
     if (*origin_str == '\0' || origin_str == NULL || strlen(origin_str) == 0)
     {
-        perror("Empty String");
+	printf("Empty String.\n");
         return false;
+    }
+    if (start_index >= strlen(origin_str))
+    {
+	    printf("Error Start Index.\n");
+	    return false;
     }
     result_str_head = result_str;
     for (; curent_cpy_num < cpy_num; curent_cpy_num++)
