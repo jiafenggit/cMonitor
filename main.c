@@ -9,6 +9,13 @@
 
 int main(void)
 {
+	dict *tmp = create_dic();
+	add_dict(tmp, "mysql", BOOL_FALSE);
+	add_dict(tmp, "mongod", BOOL_TRUE);
+	add_dict(tmp, "proc", INTTYPE, 100);
+	add_dict(tmp, "name", STRINGTYPE, "centos");
+	printf("%s\n", convert_to_json(tmp));
+	printf("%s\n", convert_to_json(tmp));
 
 //	char str[32];
 //	memncpy(str, "cf}}}", 0, 1);

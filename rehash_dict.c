@@ -101,6 +101,16 @@ bool add_dict(dict *d, char *key, int type, ...)
 	    d->rehash_index = 0;
 	    single_rehash_dict(d);
 	    switch (type) {
+	    case BOOL_FALSE:
+	    {
+		    add_dict(d, key, type);
+	    }
+		    break;
+	    case BOOL_TRUE:
+	    {
+		    add_dict(d, key, type);
+	    }
+		    break;
 	    case INTTYPE:
 	    {
 		    add_dict(d, key, type, va_arg(value_ptr, long));
@@ -137,6 +147,18 @@ bool add_dict(dict *d, char *key, int type, ...)
 	    de->key = (char *)calloc(strlen(key) + 1, sizeof(char));
 	    memcpy(de->key, key, strlen(key));
 	    switch (type) {
+	    case BOOL_FALSE:
+	    {
+		    de->value_type = BOOL_FALSE;
+		    de->value.bool_value = false;
+	    }
+		break;
+	    case BOOL_TRUE:
+	    {
+		    de->value_type = BOOL_TRUE;
+		    de->value.num_value = true;
+	    }
+		break;
 	    case INTTYPE:
 	    {
 		    de->value_type = INTTYPE;

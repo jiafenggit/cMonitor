@@ -54,8 +54,8 @@
 #define MERGE_HOUR_TO_DAY 1024
 #define REQUEST_ALIVE_IP 1025
 
-//#define CONFIG_FILE_PATH "/tmp/cMonitor/cCollection.conf.json"
-//#define _FILE_PATH	""
+#define CONFIG_FILE_PATH "/tmp/cMonitor/cCollection.conf.json"
+#define SHELL_FILE_DIR	"/home/cf/shell/"
 //#define _FILE_PATH	""
 //#define _FILE_PATH	""
 //#define _FILE_PATH	""

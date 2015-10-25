@@ -134,7 +134,7 @@ void collect_sys_info(char *sys_info_json_arg)
 		printf("Exec collect_sys_info function failed.\n");
 		return;
 	}
-	if((conf_fd = fopen("/tmp/cMonitor/cCollection.conf.json", "r")) == NULL)
+	if((conf_fd = fopen(CONFIG_FILE_PATH, "r")) == NULL)
 	{
 		perror("Exec collect_sys_info/fopen function failed.");
 		return;
@@ -196,6 +196,16 @@ char* convert_to_json(dict *collection_dict)
 		while(head && strlen(head->key) != 0)
 		{
 			switch (head->value_type) {
+			case BOOL_FALSE:
+			{
+				cJSON_AddFalseToObject(root, head->key);
+			}
+				break;
+			case BOOL_TRUE:
+			{
+				cJSON_AddTrueToObject(root, head->key);
+			}
+				break;
 			case INTTYPE:
 			{
 				cJSON_AddNumberToObject(root, head->key, head->value.num_value);

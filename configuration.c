@@ -4,9 +4,9 @@ bool init_conf(void)
 {
 	char *conf_json = NULL;
 	FILE *conf_fd = NULL;
-	if (access("/tmp/cMonitor/cCollection.conf.json", F_OK) != -1)
+	if (access(CONFIG_FILE_PATH, F_OK) != -1)
 	{
-		if (access("/tmp/cMonitor/cCollection.conf.json", R_OK) != 0)
+		if (access(CONFIG_FILE_PATH, R_OK) != 0)
 		{
 			perror("No read permission.\n");
 			return false;
@@ -17,7 +17,7 @@ bool init_conf(void)
 	{
 		conf_json = create_conf_json();
 		printf("conf:%s\n", conf_json);
-		if ((conf_fd = fopen("/tmp/cMonitor/cCollection.conf.json", "a+")) == NULL)
+		if ((conf_fd = fopen(CONFIG_FILE_PATH, "a+")) == NULL)
 		{
 			perror("open conf file.");
 			return false;
@@ -108,7 +108,7 @@ char *fetch_key_key_value_str(char *first_key, char *second_key)
 	FILE *conf_fd = NULL;
 	int conf_file_size = 0;
 
-	if((conf_fd = fopen("/tmp/cMonitor/cCollection.conf.json", "r")) == NULL)
+	if((conf_fd = fopen(CONFIG_FILE_PATH, "r")) == NULL)
 	{
 		perror("open conf file.");
 		return NULL;
@@ -148,7 +148,7 @@ bool fetch_key_key_value_bool(char *first_key, char *second_key)
 	int conf_file_size = 0;
 
 
-	if((conf_fd = fopen("/tmp/cMonitor/cCollection.conf.json", "r")) == NULL)
+	if((conf_fd = fopen(CONFIG_FILE_PATH, "r")) == NULL)
 	{
 		perror("open conf file.");
 		return NULL;
@@ -185,7 +185,7 @@ int fetch_key_key_value_int(char *first_key, char *second_key)
 	int conf_file_size = 0;
 
 
-	if((conf_fd = fopen("/tmp/cMonitor/cCollection.conf.json", "r")) == NULL)
+	if((conf_fd = fopen(CONFIG_FILE_PATH, "r")) == NULL)
 	{
 		perror("open conf file.");
 		return NULL;

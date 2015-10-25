@@ -49,7 +49,7 @@ bool mulcast_dg(char *json_data)
 	int conf_file_size = 0;
 
 
-	if((conf_fd = fopen("/tmp/cMonitor/cCollection.conf.json", "r")) == NULL)
+	if((conf_fd = fopen(CONFIG_FILE_PATH, "r")) == NULL)
 	{
 		perror("Exec mulcast_dg/fopen  function failed.");
 		return false;
@@ -740,7 +740,7 @@ void activate_solider_listen(void)
 		    FILE *conf_fd = NULL;
 		    int conf_file_size = 0;
 
-		    if((conf_fd = fopen("/tmp/cMonitor/cCollection.conf.json", "r")) == NULL)
+		    if((conf_fd = fopen(CONFIG_FILE_PATH, "r")) == NULL)
 		    {
 			    perror("Exec activate_solider_listen/fopen function failed.");
 			    break;
