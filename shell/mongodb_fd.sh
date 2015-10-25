@@ -18,6 +18,6 @@ function get_service_fd()
 		exit 0
 	fi
 	service_fd=`echo cuitlab | sudo -S ls /proc/$service_pid/fd | wc -l | awk -F ':' '{print $NF}'`
-	echo 2'|'$service_fd
+	echo $2'|'2'|'$service_fd
 }
-get_service_fd 'mongod'
+get_service_fd 'mongod' 'mongod_fd'

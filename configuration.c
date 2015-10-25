@@ -91,7 +91,8 @@ char *create_conf_json(void)
 	cJSON_AddItemToObject(root, "custom", custom = cJSON_CreateObject());
 	//cJSON_AddFalseToObject(custom, "enable");
 	cJSON_AddTrueToObject(custom, "enable");
-	cJSON_AddStringToObject(custom, "init", "pmap 1 | grep total| grep \".*\" | grep -oP \"\\d+(?=K)\"");
+	cJSON_AddStringToObject(custom, "shell_interpreter", "bash");
+	cJSON_AddStringToObject(custom, "shell_dir", "/home/cf/cMonitor/shell/");
 
 
 	conf_json = cJSON_Print(root);

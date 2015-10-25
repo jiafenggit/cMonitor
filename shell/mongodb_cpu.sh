@@ -18,6 +18,6 @@ function get_service_cpu()
 		exit 0
 	fi
 	service_cpu=`ps -p $service_pid -o pcpu | grep -v CPU | awk '{print $1}'`
-	echo 3'|'$service_cpu
+	echo $2'|'3'|'$service_cpu
 }
-get_service_cpu 'mongod'
+get_service_cpu 'mongod' 'mongod_cpu'

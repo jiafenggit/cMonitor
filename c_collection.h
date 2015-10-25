@@ -25,7 +25,7 @@ bool collect_load_info(cJSON *collection, dict *collection_dict);
 bool collect_network_info(cJSON *collection, dict *collection_dict);
 bool collect_disk_info(cJSON *collection, dict *collection_dict);
 bool collect_custom_data(cJSON *conf_root, dict *collection_dict);
-
+char *exec_shell_scripte(char *shell_interpreter, char *script_path);
 
 
 

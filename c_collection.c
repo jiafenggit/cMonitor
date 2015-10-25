@@ -1087,41 +1087,178 @@ bool collect_custom_data(cJSON *conf_root, dict *collection_dict)
 	}
 	cJSON *custom_node = NULL;
 	custom_node = custom->child->next;
-	while(custom_node)
+	DIR *shell_dir;
+	struct dirent *dir_element;
+	struct stat element_stat;
+
+	if (!(shell_dir = opendir(custom_node->next->valuestring)))
 	{
-		FILE *fd;
-		char *key = custom_node->string;
-		char *value = custom_node->valuestring;
-		char *command_str = NULL;
-		char *command_value = NULL;
-		command_str = (char *)calloc(strlen(value) + 16, sizeof(char));
-		strcat(command_str, value);
-		strcat(command_str, " >> command.data ");
-		system(command_str);
-		if ((fd = fopen("command.data", "r")) == NULL)
-		{
-			perror("read file.");
-			return false;
-		}
-		command_value = (char *) calloc(64, sizeof(char));
-		fgets(command_value, 64, fd);
-		fclose(fd);
-		strip(command_value);
-		if(add_dict(collection_dict, key, STRINGTYPE, command_value) == false)
-		{
-			printf("dict add error.\n");
-			return false;
-		}
-		if (remove("command.data") != 0)
-		{
-			perror("remove file.");
-			return false;
-		}
-		free(command_str);
-		command_str = NULL;
-		free(command_value);
-		command_value = NULL;
-		custom_node = custom_node->next;
+		perror("Exec collect_custom_data/opendir function error.");
+		return false;
 	}
+	while ((dir_element = readdir(shell_dir)) != NULL)
+	{
+		memset(&element_stat, 0, sizeof(element_stat));
+		if (strncmp(dir_element->d_name, ".", 1) == 0)
+			continue;
+		char *dir_element_path = NULL;
+		dir_element_path = (char *)calloc(strlen(custom_node->next->valuestring) + strlen(dir_element->d_name) + 1, sizeof(char));
+		strcat(dir_element_path, custom_node->next->valuestring);
+		strcat(dir_element_path, dir_element->d_name);
+		if (stat(dir_element_path, &element_stat) != 0)
+		{
+			perror("Exec collect_custom_data/stat function error.");
+			return false;
+		}
+		if (S_ISDIR(element_stat.st_mode))
+		{
+			free(dir_element_path);
+			dir_element_path = NULL;
+			continue;
+		}
+		else
+		{
+			char *exec_reply = NULL;
+			exec_reply = exec_shell_scripte(custom_node->valuestring, dir_element_path);
+			char *type = NULL;
+			char *key = NULL;
+			type = str_split(exec_reply, '|', 1);
+			key = str_split(exec_reply, '|', 0);
+			switch (atoi(type)) {
+			case BOOL_FALSE:
+			{
+				if(add_dict(collection_dict, key, BOOL_FALSE) == false)
+				{
+					printf("dict add error.\n");
+					return false;
+				}
+			}
+				break;
+			case BOOL_TRUE:
+			{
+				if(add_dict(collection_dict, key, BOOL_TRUE) == false)
+				{
+					printf("dict add error.\n");
+					return false;
+				}
+			}
+				break;
+			case INTTYPE:
+			{
+				char *value = NULL;
+				value = str_split(exec_reply, '|', 2);
+				if(add_dict(collection_dict, key, INTTYPE, atoi(value)) == false)
+				{
+					printf("dict add error.\n");
+					free(value);
+					value = NULL;
+					return false;
+				}
+				free(value);
+				value = NULL;
+			}
+				break;
+			case DECIMALTYPE:
+			{
+				char *value = NULL;
+				value = str_split(exec_reply, '|', 2);
+				if(add_dict(collection_dict, key, DECIMALTYPE, atof(value)) == false)
+				{
+					printf("dict add error.\n");
+					free(value);
+					value = NULL;
+					return false;
+				}
+				free(value);
+				value = NULL;
+			}
+				break;
+			case STRINGTYPE:
+			{
+				char *value = NULL;
+				value = str_split(exec_reply, '|', 2);
+				if(add_dict(collection_dict, key, STRINGTYPE, value) == false)
+				{
+					printf("dict add error.\n");
+					free(value);
+					value = NULL;
+					return false;
+				}
+				free(value);
+				value = NULL;
+			}
+				break;
+			default:
+				break;
+			}
+			free(type);
+			type = NULL;
+			free(key);
+			key = NULL;
+			free(dir_element_path);
+			dir_element_path = NULL;
+			free(exec_reply);
+			exec_reply = NULL;
+		}
+	}
+	closedir(shell_dir);
+//	while(custom_node)
+//	{
+//		FILE *fd;
+//		char *key = custom_node->string;
+//		char *value = custom_node->valuestring;
+//		char *command_str = NULL;
+//		char *command_value = NULL;
+//		command_str = (char *)calloc(strlen(value) + 16, sizeof(char));
+//		strcat(command_str, value);
+//		strcat(command_str, " >> command.data ");
+//		system(command_str);
+//		if ((fd = fopen("command.data", "r")) == NULL)
+//		{
+//			perror("read file.");
+//			return false;
+//		}
+//		command_value = (char *) calloc(64, sizeof(char));
+//		fgets(command_value, 64, fd);
+//		fclose(fd);
+//		strip(command_value);
+//		if(add_dict(collection_dict, key, STRINGTYPE, command_value) == false)
+//		{
+//			printf("dict add error.\n");
+//			return false;
+//		}
+//		if (remove("command.data") != 0)
+//		{
+//			perror("remove file.");
+//			return false;
+//		}
+//		free(command_str);
+//		command_str = NULL;
+//		free(command_value);
+//		command_value = NULL;
+//		custom_node = custom_node->next;
+//	}
 	return true;
+}
+
+char *exec_shell_scripte(char *shell_interpreter, char *script_path)
+{
+	FILE *shell_reply_stream;
+	char *exec_reply = NULL;
+	char *shell_code = NULL;
+	shell_code = (char *)calloc(strlen(script_path) + 10, sizeof(char));
+	strcat(shell_code, shell_interpreter);
+	strcat(shell_code, " ");
+	strcat(shell_code, script_path);
+	shell_reply_stream = popen(shell_code, "r");
+	fseek(shell_reply_stream, 0, SEEK_END);
+	int reply_size = ftell(shell_reply_stream);
+	fseek(shell_reply_stream, 0, SEEK_SET);
+	exec_reply = (char *)calloc(reply_size + 1, sizeof(char));
+	fread(exec_reply, sizeof(char), reply_size, shell_reply_stream);
+	fclose(shell_reply_stream);
+	free(shell_code);
+	shell_code = NULL;
+	r_strip(exec_reply, "\n");
+	return exec_reply;
 }

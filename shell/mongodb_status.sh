@@ -11,4 +11,4 @@ function get_service_status()
 	fi
 }
 get_service_status 'mongod'
-echo $?'|'$?
+echo mongod_status'|'$?'|'$?

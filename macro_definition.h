@@ -24,6 +24,7 @@
 #include <unistd.h>
 #include <mongoc.h>
 #include <pthread.h>
+#include <dirent.h>
 
 #define MAX_SINGLE_HOST_INFO_SIZE	8191
 #define MAX_COLLECT_USED_TIME		2

@@ -1,0 +1,7 @@
+#!/bin/bash
+
+
+dev_name="sda"
+reply=`df -Ti | grep $dev_name | awk '{print $3}'`
+echo 2'|'$reply
+

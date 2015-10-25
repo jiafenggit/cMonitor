@@ -18,6 +18,6 @@ function get_service_mem()
 		exit 0
 	fi
 	service_mem=`ps -p $service_pid -o pmem | grep -v MEM | awk '{print $1}'`
-	echo 2'|'$service_mem
+	echo $2'|'2'|'$service_mem
 }
-get_service_mem 'mongod'
+get_service_mem 'mongod' 'mongod_mem'

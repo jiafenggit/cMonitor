@@ -79,6 +79,7 @@ void activate_monitor_data_multicast(void)
 		char *datagram= NULL;
 		datagram = fetch_dictEntry(dg_dict, "datagram")->value.string_value;
 		char *mmh_hash = murmurhash_str(datagram);
+		printf("%s\t %s\n",fetch_dictEntry(dg_dict, "mmh")->value.string_value , mmh_hash);
 		if (strcmp(mmh_hash, fetch_dictEntry(dg_dict, "mmh")->value.string_value) != 0)
 		{
 			printf("Exec activate_solider_merge/fetch_dictEntry function failed.\n");

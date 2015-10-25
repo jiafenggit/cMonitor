@@ -23,6 +23,7 @@ void activate_solider_collect(void)
 			pthread_join(collect_thread, NULL);
 		}
 		sys_info_dg = mul_encap_datagram(RT_HOST, sys_info_json);
+		printf("#######%s\n", sys_info_dg);
 		if (mulcast_dg(sys_info_dg) == false)
 		{
 			printf("Exec activate_solider_collect/mulcast_dg  function failed.\n");
