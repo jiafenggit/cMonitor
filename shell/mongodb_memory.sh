@@ -14,10 +14,10 @@ function get_service_mem()
 	service_pid=`get_service_pid $service_name`
 	if [ "-$service_pid" == "-" ]
 	then 
-		echo -1
+		echo -1'|'NULL
 		exit 0
 	fi
 	service_mem=`ps -p $service_pid -o pmem | grep -v MEM | awk '{print $1}'`
-	echo $service_mem
+	echo 2'|'$service_mem
 }
-get_service_mem 'mysql'
+get_service_mem 'mongod'

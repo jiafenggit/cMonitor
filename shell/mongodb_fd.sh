@@ -14,10 +14,10 @@ function get_service_fd()
 	service_pid=`get_service_pid $service_name`
 	if [ "-$service_pid" == "-" ]
 	then 
-		echo -1
+		echo -1'|'NULL
 		exit 0
 	fi
 	service_fd=`echo cuitlab | sudo -S ls /proc/$service_pid/fd | wc -l | awk -F ':' '{print $NF}'`
-	echo $service_fd
+	echo 2'|'$service_fd
 }
 get_service_fd 'mongod'
