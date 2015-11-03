@@ -1,5 +1,9 @@
 #include "configuration.h"
 
+/**
+ * [初始化配置文件，生成默认配置的配置文件]
+ * @return [函数是否成功执行]
+ */
 bool init_conf(void)
 {
 	char *conf_json = NULL;
@@ -30,6 +34,10 @@ bool init_conf(void)
 
 }
 
+/**
+ * [创建默认配置的配置文件]
+ * @return [JSON形式的配置文件字符串]
+ */
 char *create_conf_json(void)
 {
 	cJSON *root, *collection, *network, *heartbeat, *cluster, *custom;
@@ -100,6 +108,15 @@ char *create_conf_json(void)
 	return conf_json;
 }
 
+/**
+ * [获取配置文件双层嵌套的key的value，针对value为字符串的key]
+ * @param 第一层key
+ * @param 第二层key
+ * @return [value]
+ * eg：{"key1":{"key2":"value_str"}}
+ * 	reply = fetch_key_key_value_str("key1", "key2")
+ * 	reply : "value_str"
+ */
 char *fetch_key_key_value_str(char *first_key, char *second_key)
 {
 	char *conf_json = NULL;
@@ -139,6 +156,15 @@ char *fetch_key_key_value_str(char *first_key, char *second_key)
 	return value_buf;
 }
 
+/**
+ * [获取配置文件双层嵌套的key的value，针对value为BOOL的key]
+ * @param 第一层key
+ * @param 第二层key
+ * @return [value]
+ * eg：{"key1":{"key2":true}}
+ * 	reply = fetch_key_key_value_str("key1", "key2")
+ * 	reply : true
+ */
 bool fetch_key_key_value_bool(char *first_key, char *second_key)
 {
 	char *conf_json = NULL;
@@ -176,6 +202,15 @@ bool fetch_key_key_value_bool(char *first_key, char *second_key)
 	return value_buf;
 }
 
+/**
+ * [获取配置文件双层嵌套的key的value，针对value为int的key]
+ * @param 第一层key
+ * @param 第二层key
+ * @return [value]
+ * eg：{"key1":{"key2":1024}}
+ * 	reply = fetch_key_key_value_str("key1", "key2")
+ * 	reply : 1024
+ */
 int fetch_key_key_value_int(char *first_key, char *second_key)
 {
 	char *conf_json = NULL;

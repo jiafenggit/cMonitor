@@ -1,6 +1,9 @@
 #include "c_collection.h"
 
-
+/**
+ * [采集old_cpu_use, old_cpu_total信息，便于计算cpu使用率]
+ * @return [函数是否成功执行]
+ */
 bool init_old_cpu_info(void)
 {
 	char *value = NULL;
@@ -39,7 +42,12 @@ bool init_old_cpu_info(void)
 }
 
 
-
+/**
+ * [获取key:value模式字符串的value]
+ * @param 获取的值字符串
+ * @param 源字符串
+ * @return [函数是否成功执行]
+ */
 bool fetch_value(char *result_value, char *origin_str)
 {
     if (split(result_value, origin_str, ':', 1) == false)
@@ -55,6 +63,14 @@ bool fetch_value(char *result_value, char *origin_str)
     return true;
 }
 
+/**
+ * [获取key:value模式文件中制定key的值，如果有多个行符合，则获取key1:key2:key3:...格式字符串]
+ * @param 获取的值字符串
+ * @param 文件路径
+ * @param key的个数
+ * @param 可选参数，一般为key，字符串
+ * @return [函数是否成功执行]
+ */
 bool fetch_vaules_from_file(char *result_values,  char *file_path, short key_num, ...)
 {
     FILE *fstream;
@@ -118,7 +134,11 @@ bool fetch_vaules_from_file(char *result_values,  char *file_path, short key_num
     return true;
 }
 
-void collect_sys_info(char *sys_info_json_arg)
+/**
+ * [采集主机各种信息]
+ * @param 采集到的信息的JSON字符串
+ */
+void collect_host_info(char *sys_info_json_arg)
 {
 	char *conf_json = NULL;
 	FILE *conf_fd = NULL;
@@ -131,12 +151,12 @@ void collect_sys_info(char *sys_info_json_arg)
 
 	if (init_conf() == false)
 	{
-		printf("Exec collect_sys_info function failed.\n");
+		printf("Exec collect_host_info function failed.\n");
 		return;
 	}
 	if((conf_fd = fopen(CONFIG_FILE_PATH, "r")) == NULL)
 	{
-		perror("Exec collect_sys_info/fopen function failed.");
+		perror("Exec collect_host_info/fopen function failed.");
 		return;
 	}
 	fseek(conf_fd, 0, SEEK_END);
@@ -145,7 +165,7 @@ void collect_sys_info(char *sys_info_json_arg)
 	conf_json = (char *)calloc(conf_file_size + 1, sizeof(char));
 	if (conf_json == NULL)
 	{
-		perror("Exec collect_sys_info/calloc function failed.");
+		perror("Exec collect_host_info/calloc function failed.");
 		free(conf_json);
 		fclose(conf_fd);
 		return;
@@ -171,17 +191,21 @@ void collect_sys_info(char *sys_info_json_arg)
 	sys_info_json = convert_to_json(collection_dict);
 	if (release_dict(collection_dict) == false)
 	{
-		printf("Exec collect_sys_info/release_dict function failed.\n");
+		printf("Exec collect_host_info/release_dict function failed.\n");
 		free(conf_json);
 		return;
 	}
 	memcpy(sys_info_json_arg, sys_info_json, strlen(sys_info_json));
-	printf("collect_sys_info succeeded.size:%ld\n", strlen(sys_info_json) *sizeof(char));
+	printf("collect_host_info succeeded.size:%ld\n", strlen(sys_info_json) *sizeof(char));
 	free(conf_json);
 	free(sys_info_json);
 }
 
-
+/**
+ * [将dict转换为JSON字符串]
+ * @param 待处理的dict
+ * @return [转换后的JSON字符串]
+ */
 char* convert_to_json(dict *collection_dict)
 {
 	cJSON *root;
@@ -227,24 +251,17 @@ char* convert_to_json(dict *collection_dict)
 			head = head->next;
 		}
 	}
-//	if(collection_dict->rehash_index != -1)
-//	{
-//	    head = NULL;
-//	    for (key_index = 0; key_index < collection_dict->hash_table[1].size; key_index++)
-//	    {
-//		    head = collection_dict->hash_table[1].table[key_index];
-//		    while(head && strlen(head->key) != 0)
-//		    {
-//			    cJSON_AddStringToObject(root, head->key, head->value.string_value);
-//			    head = head->next;
-//		    }
-//	    }
-//	}
 	sys_info_string = cJSON_Print(root);
 	cJSON_Delete(root);
 	return sys_info_string;
 }
 
+/**
+ * [采集cpu相关信息]
+ * @param 配置文件的JSON节点
+ * @param 存放监控数据的dict
+ * @return [函数是否成功执行]
+ */
 bool collect_cpu_info(cJSON *collection, dict *collection_dict)
 {
 	char *value = NULL;
@@ -405,6 +422,12 @@ bool collect_cpu_info(cJSON *collection, dict *collection_dict)
 	return true;
 }
 
+/**
+ * [采集主机ip，uuid，启动时间，系统名称等相关信息]
+ * @param 配置文件的JSON节点
+ * @param 存放监控数据的dict
+ * @return [函数是否成功执行]
+ */
 bool collect_machine_info(cJSON *collection, dict *collection_dict){
 	char *value = NULL;
 	char *value_buf = NULL;
@@ -430,26 +453,7 @@ bool collect_machine_info(cJSON *collection, dict *collection_dict){
 		return false;
 	}
 	free(tmp);
-//	if (cJSON_GetObjectItem(collection, "machine_type")->type == true)
-//	{
-//		fetch_vaules_from_file(value_buf, "/proc/cpuinfo", 1, "flag");
-//		if(strstr(value_buf, "lm") == NULL)
-//		{
-//			memcpy(value, "32 bit", 6);
-//		}
-//		else
-//		{
-//			memcpy(value, "64 bit", 6);
-//		}
-//		printf("\n\nfetch:%s\n", value);
-//		if(add_dict(collection_dict, "machine_type", 2, value) == false)
-//		{
-//			printf("dict add error.\n");
-//			return false;
-//		}
-//		memset(value, 0, strlen(value));
-//		memset(value_buf, 0, strlen(value_buf));
-//	}
+
 
 	if (cJSON_GetObjectItem(collection, "boot_time")->type == true)
 	{
@@ -495,6 +499,10 @@ bool collect_machine_info(cJSON *collection, dict *collection_dict){
 	return true;
 }
 
+/**
+ * [采集主机ip]
+ * @return [ip，字符串]
+ */
 char* collect_machine_ip(void)
 {
     int sock_get_ip;
@@ -524,6 +532,10 @@ char* collect_machine_ip(void)
     return ipaddr;
 }
 
+/**
+ * [采集主机uuid]
+ * @return [uuid，字符串]
+ */
 char* collect_machine_uuid(void)
 {
 	uint32_t uuid = 0;
@@ -557,6 +569,13 @@ char* collect_machine_uuid(void)
 	return murmurhash_str(uuid_str);
 }
 
+/**
+ * [采集主机mac地址]
+ * @param 存放mac地址的字符串指针
+ * @param 存放mac的字符串的长度
+ * @return [-1：采集失败，其他，采集成功]
+ * 附：使用的网上的源码
+ */
 int collect_mac_addr(char * mac, int len_limit)
 {
     struct ifreq ifreq;
@@ -578,6 +597,12 @@ int collect_mac_addr(char * mac, int len_limit)
     return snprintf (mac, len_limit, "%X:%X:%X:%X:%X:%X", (unsigned char) ifreq.ifr_hwaddr.sa_data[0], (unsigned char) ifreq.ifr_hwaddr.sa_data[1], (unsigned char) ifreq.ifr_hwaddr.sa_data[2], (unsigned char) ifreq.ifr_hwaddr.sa_data[3], (unsigned char) ifreq.ifr_hwaddr.sa_data[4], (unsigned char) ifreq.ifr_hwaddr.sa_data[5]);
 }
 
+/**
+ * [采集内存相关信息]
+ * @param 配置文件的JSON节点
+ * @param 存放监控数据的dict
+ * @return [函数是否成功执行]
+ */
 bool collect_memory_info(cJSON *collection, dict *collection_dict)
 {
 	char *value = NULL;
@@ -673,6 +698,12 @@ bool collect_memory_info(cJSON *collection, dict *collection_dict)
 	return true;
 }
 
+/**
+ * [采集虚拟内存相关信息]
+ * @param 配置文件的JSON节点
+ * @param 存放监控数据的dict
+ * @return [函数是否成功执行]
+ */
 bool collect_swap_info(cJSON *collection, dict *collection_dict)
 {
 	char *value = NULL;
@@ -739,6 +770,12 @@ bool collect_swap_info(cJSON *collection, dict *collection_dict)
 	return true;
 }
 
+/**
+ * [采集系统负载相关信息]
+ * @param 配置文件的JSON节点
+ * @param 存放监控数据的dict
+ * @return [函数是否成功执行]
+ */
 bool collect_load_info(cJSON *collection, dict *collection_dict)
 {
 	char *value = NULL;
@@ -807,6 +844,12 @@ bool collect_load_info(cJSON *collection, dict *collection_dict)
 	return true;
 }
 
+/**
+ * [采集进程相关信息]
+ * @param 配置文件的JSON节点
+ * @param 存放监控数据的dict
+ * @return [函数是否成功执行]
+ */
 bool collect_proc_info(cJSON *collection, dict *collection_dict)
 {
 	char *value = NULL;
@@ -843,6 +886,12 @@ bool collect_proc_info(cJSON *collection, dict *collection_dict)
 	return true;
 }
 
+/**
+ * [采集网络相关信息]
+ * @param 配置文件的JSON节点
+ * @param 存放监控数据的dict
+ * @return [函数是否成功执行]
+ */
 bool collect_network_info(cJSON *collection, dict *collection_dict)
 {
 	char *value = NULL;
@@ -979,6 +1028,12 @@ bool collect_network_info(cJSON *collection, dict *collection_dict)
 	return true;
 }
 
+/**
+ * [采集磁盘相关信息]
+ * @param 配置文件的JSON节点
+ * @param 存放监控数据的dict
+ * @return [函数是否成功执行]
+ */
 bool collect_disk_info(cJSON *collection, dict *collection_dict)
 {
 	char *value = NULL;
@@ -1076,7 +1131,12 @@ bool collect_disk_info(cJSON *collection, dict *collection_dict)
 	return true;
 }
 
-
+/**
+ * [采集用户自定义的监控数据]
+ * @param 配置文件的JSON节点
+ * @param 存放监控数据的dict
+ * @return [函数是否成功执行]
+ */
 bool collect_custom_data(cJSON *conf_root, dict *collection_dict)
 {
 	cJSON *custom = NULL;
@@ -1202,45 +1262,15 @@ bool collect_custom_data(cJSON *conf_root, dict *collection_dict)
 		}
 	}
 	closedir(shell_dir);
-//	while(custom_node)
-//	{
-//		FILE *fd;
-//		char *key = custom_node->string;
-//		char *value = custom_node->valuestring;
-//		char *command_str = NULL;
-//		char *command_value = NULL;
-//		command_str = (char *)calloc(strlen(value) + 16, sizeof(char));
-//		strcat(command_str, value);
-//		strcat(command_str, " >> command.data ");
-//		system(command_str);
-//		if ((fd = fopen("command.data", "r")) == NULL)
-//		{
-//			perror("read file.");
-//			return false;
-//		}
-//		command_value = (char *) calloc(64, sizeof(char));
-//		fgets(command_value, 64, fd);
-//		fclose(fd);
-//		strip(command_value);
-//		if(add_dict(collection_dict, key, STRINGTYPE, command_value) == false)
-//		{
-//			printf("dict add error.\n");
-//			return false;
-//		}
-//		if (remove("command.data") != 0)
-//		{
-//			perror("remove file.");
-//			return false;
-//		}
-//		free(command_str);
-//		command_str = NULL;
-//		free(command_value);
-//		command_value = NULL;
-//		custom_node = custom_node->next;
-//	}
 	return true;
 }
 
+/**
+ * [执行shell脚本，获取脚本输出]
+ * @param 可指定的脚本解释器，默认为bash
+ * @param 脚本文件路径
+ * @return [脚本输出]
+ */
 char *exec_shell_scripte(char *shell_interpreter, char *script_path)
 {
 	FILE *shell_reply_stream;

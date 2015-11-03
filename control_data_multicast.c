@@ -1,5 +1,8 @@
 #include "control_data_multicast.h"
 
+/**
+ * [激活控制数据多播组，该模块用于向共享同一个多播组的集群分发控制信息，如节点加入，节点宕机等]
+ */
 void activate_control_data_multicast(void)
 {
 	int mul_socket;
@@ -108,7 +111,12 @@ void activate_control_data_multicast(void)
 	close(mul_socket);
 }
 
-
+/**
+ * [添加新进入监控系统节点的信息到数据库，本地文件，并分发消息]
+ * @param 新进入主机的UUID
+ * @param 新进入主机的IP
+ * @return [函数是否成功执行]
+ */
 bool add_machine(char *uuid, char *machine_ip)
 {
 	if (add_host_to_mongo(uuid, machine_ip) == false)
@@ -130,6 +138,12 @@ bool add_machine(char *uuid, char *machine_ip)
 	return true;
 }
 
+/**
+ * [根据进入主机节点信息更新本地IP文件]
+ * @param 新进入主机的UUID
+ * @param 新进入主机的IP
+ * @return [函数是否成功执行]
+ */
 bool sync_alive_machines(char *uuid, char *machine_ip)
 {
 	if (add_machine_to_file(uuid, machine_ip) == false)
@@ -140,6 +154,12 @@ bool sync_alive_machines(char *uuid, char *machine_ip)
 	return true;
 }
 
+/**
+ * [根据进入宕机节点信息更新本地IP文件]
+ * @param 宕机主机的UUID
+ * @param 宕机主机的IP
+ * @return [函数是否成功执行]
+ */
 bool sync_dead_machines(char *uuid, char *machine_ip)
 {
 	if (del_machine_from_file(uuid) == false)
@@ -150,6 +170,12 @@ bool sync_dead_machines(char *uuid, char *machine_ip)
 	return true;
 }
 
+/**
+ * [封装数据报，向集群分发分发新进入主机信息]
+ * @param 新进入主机的UUID
+ * @param 新进入主机的IP
+ * @return [函数是否成功执行]
+ */
 bool sync_alive_machines_mul(void)
 {
 	char *dg_message;
@@ -171,6 +197,12 @@ bool sync_alive_machines_mul(void)
 	return true;
 }
 
+/**
+ * [封装数据报，向集群分发分发宕机主机信息]
+ * @param 宕机主机的UUID
+ * @param 宕机主机的IP
+ * @return [函数是否成功执行]
+ */
 bool sync_dead_machines_mul(char *uuid, char *target_ip)
 {
 	char *dg_message;
@@ -186,7 +218,10 @@ bool sync_dead_machines_mul(char *uuid, char *target_ip)
 	return true;
 }
 
-
+/**
+ * [发送数据到控制信息多播组]
+ * @param 待发送的数据
+ */
 void mulcast_sync_dg(char *data)
 {
 	struct sockaddr_in mcast_addr;
@@ -226,7 +261,12 @@ void mulcast_sync_dg(char *data)
 	close(mcast_socket);
 }
 
-
+/**
+ * [添加新主机到本地IP文件]
+ * @param 新进入主机的UUID
+ * @param 新进入主机的IP
+ * @return [函数是否成功执行]
+ */
 bool add_machine_to_file(char *uuid, char *machine_ip)
 {
 	char *alive_machine_json = NULL;
@@ -285,7 +325,6 @@ bool add_machine_to_file(char *uuid, char *machine_ip)
 			return false;
 		}
 		fwrite(alive_machine_json, sizeof(char), strlen(alive_machine_json), alive_machine_fd);
-		//fputs(alive_machine_json, alive_machine_fd);
 		fclose(alive_machine_fd);
 		free(alive_machine_json);
 		cJSON_Delete(root);
@@ -309,6 +348,12 @@ bool add_machine_to_file(char *uuid, char *machine_ip)
 	}
 }
 
+/**
+ * [从本地IP文件删除宕机节点信息]
+ * @param 宕机主机的UUID
+ * @param 宕机主机的IP
+ * @return [函数是否成功执行]
+ */
 bool del_machine_from_file(char *uuid)
 {
 	char *alive_machine_json = NULL;

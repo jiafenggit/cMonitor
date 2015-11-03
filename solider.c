@@ -1,7 +1,9 @@
 #include "solider.h"
 
 
-
+/**
+ * [激活数据采集模块]
+ */
 void activate_solider_collect(void)
 {
 	printf("Activate solider collect services.\n");
@@ -12,7 +14,7 @@ void activate_solider_collect(void)
 		sys_info_json = (char *)calloc(sizeof(char), MAX_SINGLE_HOST_INFO_SIZE);
 		pthread_t collect_thread;
 		int collect_thread_flag = -1;
-		if ((collect_thread_flag = pthread_create(&collect_thread, NULL, (void *)collect_sys_info, sys_info_json)) != 0)
+		if ((collect_thread_flag = pthread_create(&collect_thread, NULL, (void *)collect_host_info, sys_info_json)) != 0)
 		{
 			perror("Create activate_solider_collect thread failed.");
 			continue;
@@ -39,6 +41,11 @@ void activate_solider_collect(void)
 	}
 }
 
+/**
+ * [发送数据到监控数据多播组]
+ * @param 待发送的数据
+ * @return [函数是否执行成功]
+ */
 bool mulcast_dg(char *json_data)
 {
 	struct sockaddr_in mcast_addr;
@@ -99,6 +106,9 @@ bool mulcast_dg(char *json_data)
 	return true;
 }
 
+/**
+ * [封装数据报，发送节点自身信息到多播组]
+ */
 void machine_scale_out(void)
 {
 	sleep(1);
@@ -136,7 +146,10 @@ void machine_scale_out(void)
 }
 
 
-
+/**
+ * [发送数据到控制信息多播组]
+ * @param 待发送的数据
+ */
 bool mulcast_scaleout_dg(char *data)
 {
 	struct sockaddr_in mcast_addr;
@@ -177,7 +190,12 @@ bool mulcast_scaleout_dg(char *data)
 	return true;
 }
 
-
+/**
+ * [封装数据报]
+ * @param 数据报类型
+ * @param 数据报正文
+ * @return [封装后的数据报]
+ */
 char *mul_encap_datagram(int dg_type, char *datagram)
 {
 	char *dg_message;
@@ -369,276 +387,9 @@ char *mul_encap_datagram(int dg_type, char *datagram)
 
 }
 
-
-
-bool save_rr_dg(cJSON *cluster_rt_root)
-{
-	char *cluster_rr_dg = NULL;
-	cJSON *cluster_rr_dg_root;
-	FILE *cluster_rr_fd = NULL;
-	int file_size;
-	if (access("/tmp/cMonitor/rt_datagram.json", F_OK) != -1)
-	{
-		FILE *rt_dg_fd;
-		if ((rt_dg_fd = fopen("/tmp/cMonitor/rt_datagram.json", "w")) == NULL)
-		{
-			perror("open rt datagram file.");
-			cJSON_Delete(cluster_rt_root);
-			return false;
-		}
-		char *rt_dg_buf = cJSON_Print(cluster_rt_root);
-		fputs(rt_dg_buf, rt_dg_fd);
-		fclose(rt_dg_fd);
-		free(rt_dg_buf);
-		if (fetch_key_key_value_bool("cluster", "save_all_data") == true)
-		{
-			if (save_rt_dg_to_all(cluster_rt_root) == false)
-			{
-				printf("Exec /  function failed.\n");
-				return false;
-			}
-		}
-
-	}
-	else
-	{
-		FILE *rt_dg_fd;
-		if ((rt_dg_fd = fopen("/tmp/cMonitor/rt_datagram.json", "a+")) == NULL)
-		{
-			perror("open rt datagram file.");
-			cJSON_Delete(cluster_rt_root);
-			return false;
-		}
-		char *rt_dg_buf = cJSON_Print(cluster_rt_root);
-		fputs(rt_dg_buf, rt_dg_fd);
-		fclose(rt_dg_fd);
-		free(rt_dg_buf);
-		if (fetch_key_key_value_bool("cluster", "save_all_data") == true)
-		{
-			if (save_rt_dg_to_all(cluster_rt_root) == false)
-			{
-				printf("Exec /  function failed.\n");
-				return false;
-			}
-		}
-	}
-
-	if (access("/tmp/cMonitor/hour_datagram.json", F_OK) != -1)
-	{
-		if((cluster_rr_fd = fopen("/tmp/cMonitor/hour_datagram.json", "r")) == NULL)
-		{
-			perror("open rr datagram file.");
-			fclose(cluster_rr_fd);
-			cJSON_Delete(cluster_rt_root);
-			return false;
-		}
-		fseek(cluster_rr_fd, 0, SEEK_END);
-		file_size = ftell(cluster_rr_fd);
-		fseek(cluster_rr_fd, 0, SEEK_SET);
-		cluster_rr_dg = (char *)calloc(file_size + 1, sizeof(char));
-		if (cluster_rr_dg == NULL)
-		{
-			perror("calloc memory.");
-			fclose(cluster_rr_fd);
-			cJSON_Delete(cluster_rt_root);
-			return false;
-		}
-		fread(cluster_rr_dg, sizeof(char), file_size, cluster_rr_fd);
-		fclose(cluster_rr_fd);
-
-		cluster_rr_dg_root = cJSON_Parse(cluster_rr_dg);
-		time_t time_now;
-		time(&time_now);
-		char time_str[32];
-		memset(time_str, 0, 32);
-		char head_time_str[32];
-		memset(head_time_str, 0, 32);
-		memcpy(head_time_str, cluster_rr_dg_root->child->string, strlen(cluster_rr_dg_root->child->string));
-		sprintf(time_str, "%ld", (long)time_now);
-		long head_time = atol(head_time_str);
-		if (time_now - head_time >= 3600)
-		{
-			cJSON_DeleteItemFromObject(cluster_rr_dg_root, cluster_rr_dg_root->child->string);
-		}
-		cJSON_AddItemToObject(cluster_rr_dg_root,time_str, cluster_rt_root);
-		if ((cluster_rr_fd = fopen("/tmp/cMonitor/hour_datagram.json", "w")) == NULL)
-		{
-			perror("open rr datagram file.");
-			fclose(cluster_rr_fd);
-			free(cluster_rr_dg);
-			cJSON_Delete(cluster_rt_root);
-			cluster_rr_dg = NULL;
-			return false;
-		}
-		char *rt_dg_buf = cJSON_Print(cluster_rr_dg_root);
-		fputs(rt_dg_buf, cluster_rr_fd);
-		fclose(cluster_rr_fd);
-		free(rt_dg_buf);
-		free(cluster_rr_dg);
-		cluster_rr_dg = NULL;
-		cJSON_Delete(cluster_rr_dg_root);
-		cluster_rr_dg_root = NULL;
-		cluster_rt_root = NULL;
-		return true;
-	}
-	else
-	{
-		cluster_rr_dg_root = cJSON_CreateObject();
-		time_t time_now;
-		time(&time_now);
-		char time_str[32];
-		memset(time_str, 0, sizeof(time_str));
-		sprintf(time_str, "%ld", (long)time_now);
-		cJSON_AddItemToObject(cluster_rr_dg_root, time_str, cluster_rt_root);
-		if ((cluster_rr_fd = fopen("/tmp/cMonitor/hour_datagram.json", "a+")) == NULL)
-		{
-			perror("create rr datagram file.");
-			fclose(cluster_rr_fd);
-			free(cluster_rr_dg);
-			cJSON_Delete(cluster_rt_root);
-			cluster_rr_dg = NULL;
-			return false;
-		}
-		char *rt_dg_buf = cJSON_Print(cluster_rr_dg_root);
-		fputs(rt_dg_buf, cluster_rr_fd);
-		fclose(cluster_rr_fd);
-		free(rt_dg_buf);
-		free(cluster_rr_dg);
-		cluster_rr_dg = NULL;
-		cJSON_Delete(cluster_rr_dg_root);
-		cluster_rr_dg_root = NULL;
-		cluster_rt_root = NULL;
-		return true;
-	}
-}
-
-bool save_rt_dg_to_all(cJSON *rt_dg)
-{
-	char *cur_time;
-	char *cur_uuid;
-	char *cur_machine_ip;
-	char *cur_dg_buf;
-	char *cur_line_buf;
-	cJSON *head;
-	time_t time_now;
-	FILE *all_dg_fd;
-
-	if ((all_dg_fd = fopen("/tmp/cMonitor/all_datagram.data", "a+")) == NULL)
-	{
-		perror("create all datagram file.");
-		return false;
-	}
-	time(&time_now);
-	cur_time = (char *)calloc(16, sizeof(char));
-	cur_uuid = (char *)calloc(16, sizeof(char));
-	cur_machine_ip = (char *)calloc(16, sizeof(char));
-	sprintf(cur_time, "%ld", (long)time_now);
-	head = rt_dg->child;
-
-	int rt_machine_size = 0;
-	while (head)
-	{
-		memcpy(cur_uuid, head->string, strlen(head->string));
-		memcpy(cur_machine_ip, cJSON_GetObjectItem(head, "machine_ip")->valuestring, strlen(cJSON_GetObjectItem(head, "machine_ip")->valuestring));
-		cur_dg_buf = cJSON_Print(head);
-		cur_line_buf = (char *)calloc(strlen(cur_dg_buf) + 48, sizeof(char));
-		strcat(cur_line_buf, cur_time);
-		strcat(cur_line_buf, "|");
-		strcat(cur_line_buf, cur_uuid);
-		strcat(cur_line_buf, "|");
-		strcat(cur_line_buf, cur_machine_ip);
-		strcat(cur_line_buf, "|");
-		strcat(cur_line_buf, cur_dg_buf);
-		if (strip(cur_line_buf) == false)
-		{
-			printf("strip cur line buf failed.\n");
-			return false;
-		}
-		strcat(cur_line_buf, "\n");
-		fputs(cur_line_buf, all_dg_fd);
-		free(cur_dg_buf);
-		cur_dg_buf = NULL;
-		free(cur_line_buf);
-		cur_line_buf = NULL;
-		memset(cur_uuid, 0, strlen(cur_uuid));
-		memset(cur_machine_ip, 0, strlen(cur_machine_ip));
-		head = head->next;
-		rt_machine_size++;
-	}
-	printf("%ssave real time datagram.\tmerge size:%d\n", ctime(&time_now), rt_machine_size);
-	fclose(all_dg_fd);
-	free(cur_time);
-	cur_time = NULL;
-	free(cur_uuid);
-	cur_uuid = NULL;
-	free(cur_machine_ip);
-	cur_machine_ip = NULL;
-	return true;
-}
-
-int mul_test(void)
-{
-	int mul_socket;
-	int count  = 0;
-	struct sockaddr_in local_address;
-
-	if((mul_socket = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
-	{
-		perror("socket");
-		return -1;
-	}
-	int opt=1;
-	setsockopt(mul_socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
-	memset(&local_address, 0, sizeof(local_address));
-	local_address.sin_family = AF_INET;
-	local_address.sin_addr.s_addr = htonl(INADDR_ANY);
-	local_address.sin_port = htons(8192);
-
-	if(bind(mul_socket, (struct sockaddr *)&local_address, sizeof(local_address)) < 0)
-	{
-		perror("bind");
-		return -1;
-	}
-
-	int loop = 1;
-	if (setsockopt(mul_socket,IPPROTO_IP,IP_MULTICAST_LOOP,&loop, sizeof(loop)) < 0)
-	{
-		perror("IP_MULTICAST_LOOP");
-		return 0;
-	}
-
-	struct ip_mreq mrep;
-	mrep.imr_multiaddr.s_addr = inet_addr("224.0.0.19");
-	mrep.imr_interface.s_addr = htonl(INADDR_ANY);
-	//加入广播组
-	if (setsockopt(mul_socket,IPPROTO_IP,IP_ADD_MEMBERSHIP,&mrep, sizeof(mrep)) < 0)
-	{
-		perror("IP_ADD_MEMBERSHIP");
-		return 0;
-	}
-
-	while(1)
-	{
-		char buf[4096];
-		memset(buf, 0, sizeof(buf));
-		socklen_t address_len = sizeof(local_address);
-		if(recvfrom(mul_socket, buf, 4096, 0,(struct sockaddr *)&local_address, &address_len) < 0)
-		{
-			perror("recvfrom");
-		}
-		printf("msg from server: %s\n", buf);
-		printf("count:%d\n", count++);
-		sleep(1);
-	}
-	if(setsockopt(mul_socket, IPPROTO_IP, IP_DROP_MEMBERSHIP,&mrep, sizeof(mrep)) < 0)
-	{
-		perror("setsockopt:IP_DROP_MEMBERSHIP");
-	}
-	close(mul_socket);
-	return 0;
-}
-
-
+/**
+ * [激活节点的TCP监听，该模块用户监听并响应心跳检测，实时监控数据请求，监控数据名单检查等请求]
+ */
 void activate_solider_listen(void)
 {
 	int listen_sock;
@@ -831,6 +582,10 @@ void activate_solider_listen(void)
 	close(listen_sock);
 }
 
+/**
+ * [从本地文件中获取集群的实时监控数据]
+ * @return [实时监控数据]
+ */
 char *fetch_rt_dg_from_file(void)
 {
 	char *rt_dg_json = NULL;
@@ -861,8 +616,10 @@ char *fetch_rt_dg_from_file(void)
 	return rt_dg_json;
 }
 
-
-
+/**
+ * [响应心跳检测，告知对方本节点运行正常]
+ * @return [函数是否成功执行]
+ */
 bool respond_hb(int client_sock)
 {
 	char *respond_dg = listen_encap_datagram(RESOND_HEARTBEAT);
@@ -879,6 +636,12 @@ bool respond_hb(int client_sock)
 	return true;
 }
 
+/**
+ * [封装数据报]
+ * @param 数据报类型
+ * @param 可选参数，为丰富报文封装提供拓展性
+ * @return [封装后的报文]
+ */
 char *listen_encap_datagram(int type, ...)
 {
 	switch (type) {
@@ -900,17 +663,6 @@ char *listen_encap_datagram(int type, ...)
 	}
 	return NULL;
 }
-
-
-//char *fetch_alive_machines(void)
-//{
-//	cJSON *machines_root;
-//	machines_root = cJSON_CreateObject();
-//}
-
-
-
-
 
 
 

@@ -1,5 +1,9 @@
 #include "c_mongodb.h"
 
+/**
+ * [创建mongodb连接对象]
+ * @return [mongodb连接对象]
+ */
 mongoc_collection_t *create_mongo_con(void)
 {
 	mongoc_client_t *mongo_con;
@@ -12,6 +16,12 @@ mongoc_collection_t *create_mongo_con(void)
 	return mongo_con;
 }
 
+/**
+ * [添加主机信息到数据库]
+ * @param 主机uuid信息
+ * @param 主机ip信息
+ * @return [函数是否成功执行]
+ */
 bool add_host_to_mongo(char *uuid, char *host_ip)
 {
 	mongoc_init ();
@@ -88,6 +98,11 @@ bool add_host_to_mongo(char *uuid, char *host_ip)
 	return true;
 }
 
+/**
+ * [将指定主机信息从数据库删除]
+ * @param 主机uuid信息
+ * @return [函数是否成功执行]
+ */
 bool del_host_from_mongo(char *uuid)
 {
 	mongoc_init ();

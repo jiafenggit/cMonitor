@@ -11,7 +11,7 @@ int old_cpu_use, old_cpu_total;
 bool init_old_cpu_info(void);
 bool fetch_value(char *result_value, char *origin_str);
 bool fetch_vaules_from_file(char *result_values,  char *file_path, short key_num, ...);
-void collect_sys_info(char *sys_info_json_str);
+void collect_host_info(char *sys_info_json_str);
 char *convert_to_json(dict *collection_dict);
 char* collect_machine_ip(void);
 char* collect_machine_uuid(void);

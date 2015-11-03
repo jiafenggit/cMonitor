@@ -6,7 +6,6 @@
 #include "configuration.h"
 #include "c_collection.h"
 #include "c_str.h"
-#include "unix_sock.h"
 #include "c_mongodb.h"
 #include "control_data_multicast.h"
 

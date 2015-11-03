@@ -11,7 +11,6 @@ SOURCES += main.c \
     rehash_dict.c \
     solider.c \
     heartbeat.c \
-    unix_sock.c \
     configuration.c \
     c_mongodb.c \
     monitor_data_multicast.c \
@@ -28,7 +27,6 @@ HEADERS += \
     rehash_dict.h \
     solider.h \
     heartbeat.h \
-    unix_sock.h \
     configuration.h \
     macro_definition.h \
     c_mongodb.h \

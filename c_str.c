@@ -1,5 +1,10 @@
 #include "c_str.h"
 
+/**
+ * [去除字符串中的'\t''\r''\n'' ']
+ * @param 待处理字符串 
+ * @return [函数是否成功执行]
+ */
 bool strip(char *str)
 {
     char *buf = NULL;
@@ -45,6 +50,12 @@ bool strip(char *str)
     return true;
 }
 
+/**
+ * [去除字符串中指定字符]
+ * @param 待处理字符串
+ * @param 需删除字符
+ * @return [函数是否成功执行]
+ */
 bool split_strip(char *str, char *strip_chr)
 {
     char *buf = NULL;
@@ -65,7 +76,7 @@ bool split_strip(char *str, char *strip_chr)
     buf_head = buf;
     while (*str != '\0')
     {
-	if((*str) != (*strip_chr))
+    	if((*str) != (*strip_chr))
         {
             *buf = *str;
             buf++;
@@ -82,6 +93,12 @@ bool split_strip(char *str, char *strip_chr)
     return true;
 }
 
+/**
+ * [去除字符串左侧指定字符串，遇到第一个未包含在删除字符串中的字符即停止]
+ * @param 待处理字符串
+ * @param 需删除字符串
+ * @return [函数是否成功执行]
+ */
 bool l_strip(char *str, char *strip_chr)
 {
 	char *buf = NULL;
@@ -127,7 +144,12 @@ bool l_strip(char *str, char *strip_chr)
 	}
 }
 
-
+/**
+ * [去除字符串右侧指定字符串，遇到第一个未包含在删除字符串中的字符即停止]
+ * @param 待处理字符串
+ * @param 需删除字符串
+ * @return [函数是否成功执行]
+ */
 bool r_strip(char *str, char *strip_chr)
 {
 	char *buf = NULL;
@@ -173,7 +195,14 @@ bool r_strip(char *str, char *strip_chr)
 	}
 }
 
-
+/**
+ * [按照指定分隔符分割字符串，获取指定位置的字符串，字符串位置从0开始]
+ * @param 需要的指定位置的字符串
+ * @param 源字符串
+ * @param 分割字符
+ * @param 字符串位置
+ * @return [函数是否成功执行]
+ */
 bool split(char *result_str, char * origin_str, char split_chr, int split_index)
 {
     char *origin_str_buf = NULL;
@@ -281,6 +310,13 @@ bool split(char *result_str, char * origin_str, char split_chr, int split_index)
     }
 }
 
+/**
+ * [按照指定分隔符分割字符串，获取指定位置的字符串，字符串位置从0开始]
+ * @param 源字符串
+ * @param 分割字符
+ * @param 字符串位置
+ * @return [需要的指定位置的字符串]
+ */
 char *str_split(char * origin_str, char split_chr, int split_index)
 {
 	char *result_str = NULL;
@@ -295,6 +331,16 @@ char *str_split(char * origin_str, char split_chr, int split_index)
 	}
 }
 
+/**
+ * [从源字符串指定位置开始拷贝指定个数字符]
+ * @param 拷贝结果
+ * @param 源字符串
+ * @param 拷贝开始位置
+ * @param 拷贝个数
+ * @return [函数是否成功执行]
+ * eg：memncpy(reply, "hello world", 1, 3); 
+ *     reply : "ell"
+ */
 bool memncpy(char *result_str, char *origin_str, int start_index, int cpy_num)
 {
     int curent_cpy_num = 0;

@@ -2,7 +2,6 @@
 #define SOLIDER_H
 
 #include "c_collection.h"
-#include "unix_sock.h"
 #include "configuration.h"
 #include "macro_definition.h"
 #include "monitor_data_multicast.h"
@@ -24,6 +23,5 @@ char *listen_encap_datagram(int type, ...);
 char *fetch_alive_machines(void);
 
 char *fetch_rt_dg_from_file(void);
-int mul_test(void);
 #endif // SOLIDER_H
 

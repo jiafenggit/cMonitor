@@ -1,36 +1,16 @@
 #include "macro_definition.h"
 #include "solider.h"
-#include "unix_sock.h"
 #include "heartbeat.h"
 #include "configuration.h"
 #include "c_mongodb.h"
 #include "control_data_multicast.h"
 
-
+/**
+ * [根据配置文件启动相关线程]
+ */
 int main(void)
 {
-	dict *tmp = create_dic();
-	add_dict(tmp, "mysql", BOOL_FALSE);
-	add_dict(tmp, "mongod", BOOL_TRUE);
-	add_dict(tmp, "proc", INTTYPE, 100);
-	add_dict(tmp, "name", STRINGTYPE, "centos");
-	printf("%s\n", convert_to_json(tmp));
-	printf("%s\n", convert_to_json(tmp));
 
-//	char str[32];
-//	memncpy(str, "cf}}}", 0, 1);
-//	memset(str, 0, strlen(str));
-//	memncpy(str, "{{{cf}}}", 8, 1);
-//	memset(str, 0, strlen(str));
-//	memncpy(str, "{{{cf}}}", 9, 2);
-//	memset(str, 0, strlen(str));
-//	memncpy(str, "{{{chengfei}}}", 3, 90);
-//	memset(str, 0, strlen(str));
-//	memncpy(str, "{{c{chengfei}}}", 0, 15);
-//	l_strip(str, "{c{");
-//	printf("%s\n", str);
-//	r_strip(str, "}c}");
-//	printf("%s\n", str);
 
 	system("rm -rf /tmp/cMonitor");
 	system("mkdir /tmp/cMonitor ");

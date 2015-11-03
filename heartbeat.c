@@ -1,5 +1,8 @@
 #include "heartbeat.h"
 
+/**
+ * [激活心跳包模块，该模块用于检测集群中节点的存货状态]
+ */
 void activate_solider_heartbeat(void)
 {
 	sleep(10);
@@ -43,6 +46,10 @@ void activate_solider_heartbeat(void)
 
 }
 
+/**
+ * [从本地IP文件中选取一个IP地址，用于心跳检测]
+ * @return [选中的IP]
+ */
 char *fetch_target_ip(void)
 {
 	char *alive_machine_json = NULL;
@@ -107,6 +114,10 @@ char *fetch_target_ip(void)
 	return target_ip;
 }
 
+/**
+ * [根据IP地址从本地IP文件获取对于的UUID]
+ * @return [UUID]
+ */
 char *fetch_target_uuid(char *target_ip)
 {
 	char *alive_machine_json = NULL;
@@ -165,7 +176,10 @@ char *fetch_target_uuid(char *target_ip)
 
 }
 
-
+/**
+ * [想指定IP发送短报文，确定该IP节点是否存活]
+ * @return [节点存活状态。true：活动节点；false：死亡节点]
+ */
 bool heartbeat_check(char *target_ip)
 {
 	struct sockaddr_in target_addr;
@@ -233,6 +247,12 @@ bool heartbeat_check(char *target_ip)
 	return true;
 }
 
+/**
+ * [从数据库，本地文件中删除宕机节点数据，并分发消息]
+ * @param 宕机主机的UUID
+ * @param 宕机主机的IP
+ * @return [函数是否成功执行]
+ */
 bool del_machine(char *uuid, char *machine_ip)
 {
 	if (del_host_from_mongo(uuid) == false)

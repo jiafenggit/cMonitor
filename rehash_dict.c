@@ -1,43 +1,4 @@
 #include "rehash_dict.h"
-/*
-typedef struct dictEntry{
-    void *key;
-    union {
-	void *value;
-	long *value_int;
-	double *value_double;
-    } val;
-    struct dictEntry *next;
-}dictEntry;
-
-typedef struct dictType{
-    unsigned int (*murmur_hash)(void *key);
-    void *(*key_copy)(void *private_data, void *key);
-    void *(*value_copy)(void *private_data, void *obj);  //obj ???
-    int (*key_compare)(void *private_data, void *key1, void *key2);
-    void (*key_destory)(void *private_data, void *key);
-    void (*value_destory)(void *private_data, void *obj);
-}dictType;
-
-typedef struct dictHT{
-    dictEntry **table;
-    unsigned long size;
-    unsigned long size_mask;
-    unsigned long used;
-}dictHT;
-
-typedef struct dict {
-    dictHT hash_table[2];
-    int rehash_index;
-    int iterators;
-}dict;
-
-typedef struct dictIterator{
-    dict *d;
-    int table, index, safe;
-    dictEntry *entry, *next_entry;
-}dictIterator;
- * */
 
 dict *create_dic(void)
 {
@@ -370,11 +331,6 @@ bool fetch_dict_value(dict *d, char *key, int type, ...)
 	char *string_value = NULL;
 	double *double_value = 0;
 	void *object_value = NULL;
-
-//	if (d->rehash_index != -1)
-//	{
-//	    single_rehash_dict(d);
-//	}
 	if (exist_key(d, key) == false)
 	{
 		printf("Key is not exist.\n");

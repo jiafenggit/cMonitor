@@ -25,6 +25,13 @@
 //}
 
 
+/**
+ * [获取字符串的hash值，hash算法：murmurhash3]
+ * @param 待处理字符串
+ * @param 字符串长度
+ * @param hash种子，程序中均使用1024
+ * @return [hash值]
+ */
 uint32_t
 murmurhash (const char *key, uint32_t len, uint32_t seed) {
   uint32_t c1 = 0xcc9e2d51;
@@ -88,6 +95,11 @@ murmurhash (const char *key, uint32_t len, uint32_t seed) {
   return h;
 }
 
+/**
+ * [获取字符串的hash值]
+ * @param 待处理字符串
+ * @return [hash值，字符串]
+ */
 char *murmurhash_str(const char *origin_str)
 {
 	uint32_t mmh = 0;
